@@ -8,6 +8,7 @@ This project is a streamlined version of [ngineered/nginx-php-fpm](https://githu
 * `php-fpm` pool parameters can be set with environment vars (`FPM_PM`, `FPM_MAX_CHILDREN`, `FPM_START_SERVERS`, `FPM_MIN_SPARE_SERVERS`, `FPM_MAX_SPARE_SERVERS`, `FPM_MAX_REQUESTS`)
 * nginx's `set_real_ip_from` is recursive, and supports cloudflare (via `REAL_IP_CLOUDFLARE=1`) as well as your own load balancers/proxies (via `REAL_IP_FROM`)
 * Additional alpine APKs can be installed using the `EXTRA_APKS` build-time argument
+* Additional PHP core extensions can be enabled using the `EXTRA_EXTS` build-time argument
 * composer-installed files are properly chowned, and cloned files are chowned to the correct `PUID`/`PGID` instead of the default `nginx` uid/git
 * Configuration files don't grow on each container restart
 
