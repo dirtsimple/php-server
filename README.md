@@ -11,6 +11,7 @@ This project is a streamlined version of [ngineered/nginx-php-fpm](https://githu
 * Additional PHP core extensions can be enabled using the `EXTRA_EXTS` build-time argument
 * composer-installed files are properly chowned, and cloned files are chowned to the correct `PUID`/`PGID` instead of the default `nginx` uid/git
 * Configuration files don't grow on each container restart
+* nginx and composer are run as the nginx user, not root
 
 Unlike  [ngineered/nginx-php-fpm](https://github.com/ngineered/nginx-php-fpm), however, this image does *not* support a plain `conf` directory with nginx configuration files.  If you want to override the defaults you must create one or more of the following in your git project or code volume:
 
