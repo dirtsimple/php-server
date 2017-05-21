@@ -12,12 +12,14 @@ Inspired by (and implemented as a wrapper over) [ngineered/nginx-php-fpm](https:
 
 * Configuration files are generated using [gomplate](https://github.com/hairyhenderson/gomplate) templates instead of `sed`
 * Your code can provide a `conf-tpl` directory with additional configuration files to be processed w/gomplate at container start time (or you can mount replacements for this image's configuration templates under `/tpl`)
+* Ready-to-use support for most PHP "front controllers" (as used by Laravel, Drupal, Symfony, etc.): just set `PHP_CONTROLLER` to `/index.php` and `WEBROOT` to the directory containing it.
 * You can set `SUPERVISOR_INCLUDES` to a space-separated list of supervisord .conf files to be included in the supervisor configuration
 * cron jobs are supported by setting `USE_CRON=1` and putting the job data in `/etc/crontabs/root` , `/etc/crontabs/nginx`, or a file in one of the `/etc/periodic/` subdirectories (via volume mount, startup script, `conf-tpl` or `/tpl` files)
 * `php-fpm` pool parameters can be set with environment vars (`FPM_PM`, `FPM_MAX_CHILDREN`, `FPM_START_SERVERS`, `FPM_MIN_SPARE_SERVERS`, `FPM_MAX_SPARE_SERVERS`, `FPM_MAX_REQUESTS`)
 * nginx's `set_real_ip_from` is recursive, and supports Cloudflare (via `REAL_IP_CLOUDFLARE=1`) as well as your own load balancers/proxies (via `REAL_IP_FROM`)
 * Additional alpine APKs, PHP core extensions, and pecl extensions can be installed using the `EXTRA_APKS`, `EXTRA_EXTS`, and `EXTRA_PECL` build-time arguments, respectively.
 * composer-installed files are properly chowned, and cloned files are chowned to the correct `PUID`/`PGID` instead of the default `nginx` uid/gid
+* `sendfile` is turned on for optimal static file performance, unless you set `VIRTUALBOX_DEV=1`
 * Configuration files don't grow on each container restart
 * nginx and composer are run as the nginx/`PUID` user, not root
 
@@ -50,7 +52,32 @@ Templates found in `/tpl` are applied at the very beginning of container startup
 
 Template files are just plain text, except that they can contain Go template code like `{{.Env.WEBROOT}}` to insert environment variables.  Please see the [gomplate](https://github.com/hairyhenderson/gomplate) documentation and [Go Text Template](https://golang.org/pkg/text/template/#hdr-Text_and_spaces) language reference for more details, and this project's  [`tpl`](https://github.com/dirtsimple/nginx-php-fpm/tree/master/tpl) subdirectory for examples.
 
-(Note: unlike ngineered/nginx-php-fpm, this image does *not* support a plain `conf` subdirectory with nginx configuration files. If you need to change the nginx configuration, we suggest simply defining a complete nginx configuration template in your code's `conf-tpl/etc/nginx/nginx.conf` directory.)
+### Nginx Configuration
+
+#### Config Files
+
+This image generates and uses the following configuration files in `/etc/nginx`, any or all of which can be replaced using template files in your code's `conf-tpl/etc/nginx` subdirectory:
+
+* `nginx.conf` -- the main server configuration, with an `http` block that includes any server configs specified by `NGINX_SERVERS`
+* `http-server.conf` -- the default `server` block for the HTTP protocol; includes `app.conf` to specify locations and server-level settings other than the listening port/protocol
+* `https-server.conf` -- the default `server` block for the HTTPS protocol; includes `app.conf` to specify locations and server-level settings other than the listening port/protocol/certs
+* `app.conf` -- the main app configuration for running PHP and serving files under `WEBROOT`
+* `cloudflare` -- the settings needed for correct IP detection/logging when serving via cloudflare; this file is automatically included by `nginx.conf` if `REAL_IP_CLOUDFLARE`is set to `1`.
+
+#### Environment
+
+In addition, the following environment variables control how the above configuration files behave:
+
+* `WEBROOT` -- used by `app.conf` to set the server's document root
+* `VIRTUALBOX_DEV` -- if set to `1`, the `sendfile` option will be disabled (use this when doing development with Docker Toolbox or boot2docker with a volume synced to OS X or Windows)
+* `NGINX_SERVERS` -- the space-separated names of `-server.conf` files to load: defaults to `http` if not set.  Set to `http https` to enable both http and https
+* `NGINX_IPV6` -- if set to `1`, IPV6 is enabled in the http and/or https server blocks.  (Otherwise, only IPV4 is used.)
+
+#### PHP Front Controllers
+
+Many PHP frameworks use a central entry point like `index.php` to process all dynamic paths in the application.  If your app is like this, you need to set `PHP_CONTROLLER` to the path of this php file, relative to the document root and beginning with a `/`.  In addition, if the document root isn't the root of your code, you need to set `WEBROOT` as well.
+
+For example, if you are deploying a Laravel application, you need to set `WEBROOT` to `/var/www/html/public`, and `PHP_CONTROLLER` to `/index.php`.  Then, any URLs that don't resolve to static files in `public` will be routed through `/index.php` instead of producing nginx 404 errors.
 
 ### Adding Extensions
 
