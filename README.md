@@ -8,7 +8,7 @@ This is a docker image for an alpine nginx + php-fpm combo container, with suppo
 * Environment-based templating of any configuration file in the container at startup
 * Running any user-supplied startup scripts
 
-Inspired by (and implemented as a wrapper over) [ngineered/nginx-php-fpm](https://github.com/ngineered/nginx-php-fpm), this image supports all of that image's [configuration flags](https://github.com/ngineered/nginx-php-fpm/blob/master/docs/config_flags.md), plus the following enhancements and bug fixes:
+Inspired by (and implemented as a backward-compatible wrapper over) [ngineered/nginx-php-fpm](https://github.com/ngineered/nginx-php-fpm), this image supports all of that image's [configuration flags](https://github.com/ngineered/nginx-php-fpm/blob/master/docs/config_flags.md), plus the following enhancements and bug fixes:
 
 * Configuration files are generated using [gomplate](https://github.com/hairyhenderson/gomplate) templates instead of `sed`, and boolean environment variables can be set to `true` or `false` , not just `1` or `0`
 * Your code can provide a `conf-tpl` directory with additional configuration files to be processed w/gomplate at container start time (or you can mount replacements for this image's configuration templates under `/tpl`)
@@ -22,7 +22,7 @@ Inspired by (and implemented as a wrapper over) [ngineered/nginx-php-fpm](https:
 * composer-installed files are properly chowned, and cloned files are chowned to the correct `PUID`/`PGID` instead of the default `nginx` uid/gid
 * `sendfile` is turned on for optimal static file performance, unless you set `VIRTUALBOX_DEV=true`
 * Configuration files don't grow on each container restart
-* nginx and composer are run as the nginx/`PUID` user, not root
+* nginx and composer are run as the nginx/`PUID` user, not root (and there's a handy `as-nginx` script for running other things that way)
 
 ### Adding Your Code
 
@@ -36,7 +36,7 @@ Whether you're using a `GIT_REPO` or not, this image checks for the following th
 
 * a `composer.lock` file (triggering an automatic `composer install` run if found)
 * a `conf-tpl/` subdirectory (triggering configuration file updates from any supplied templates; see next section for details)
-* a `scripts/` subdirectory (containing startup scripts that will be run in alphanumeric order, if the `RUN_SCRIPTS` variable is set to `1` or `true`)
+* a `scripts/` subdirectory (containing startup scripts that will be run as root in alphanumeric order, if the `RUN_SCRIPTS` variable is set to `1` or `true`)
 
 Note: if you are using a framework that exposes a subdirectory (like `web` or `public`) as the actual directory to be served by nginx, you must set the `WEBROOT` environment variable to that subdirectory (e.g. `/var/www/html/public`).  (Assuming you don't override the web server configuration; see more below.)
 
@@ -60,18 +60,29 @@ Template files are just plain text, except that they can contain Go template cod
 This image generates and uses the following configuration files in `/etc/nginx`, any or all of which can be replaced using template files under your code's `conf-tpl/etc/nginx` subdirectory:
 
 * `app.conf` -- the main app configuration for running PHP and serving files under `WEBROOT`.  In general, if you need to change your nginx configuration, this is the first place to look.  Its contents are included *inside* of the `server {}` blocks for both the http and https servers, so they can both be configured from one file.
-* `nginx.conf` -- the main server configuration, with an `http` block that includes any server configs listed in the `sites-enabled/` subdirectory
+* `http.conf` -- extra configuration for the `http {}` block, empty by default.  (Use this to define maps, caches, etc.)
+* `nginx.conf` -- the main server configuration, with an `http` block that includes `http.conf` and any server configs listed in the `sites-enabled/` subdirectory
 * `sites-available/default.conf` -- the default `server` block for the HTTP protocol; includes `app.conf` to specify locations and server-level settings other than the listening port/protocol.  (This file is symlinked from `sites-enabled` by default.)
 * `sites-available/default-ssl.conf` -- the default `server` block for the HTTPS protocol; includes `app.conf` to specify locations and server-level settings other than the listening port/protocol/certs.  (This file is symlinked into `sites-enabled` if and only if a private key is available in `/etc/letsencrypt/live/$DOMAIN`.)
 * `cloudflare` -- the settings needed for correct IP detection/logging when serving via cloudflare; this file is automatically included by `nginx.conf` if `REAL_IP_CLOUDFLARE`is set to `1`.
+
+For backwards compatibility with `ngineered/nginx-php-fpm`, you can include a `conf/nginx/nginx-site.conf` and/or `conf/nginx/nginx-site-ssl.conf` in your code at `/var/www/html`.  Doing this will, however, disable any features of `app.conf` that you don't copy into them.  It's recommended that you use `conf-tpl/etc/nginx/app.conf` instead, going forward.
 
 #### Environment
 
 In addition, the following environment variables control how the above configuration files behave:
 
 * `WEBROOT` -- used by `app.conf` to set the server's document root
-* `VIRTUALBOX_DEV` -- if set to `1`, the `sendfile` option will be disabled (use this when doing development with Docker Toolbox or boot2docker with a volume synced to OS X or Windows)
-* `NGINX_IPV6` -- if set to `1`, IPV6 is enabled in the http and/or https server blocks.  (Otherwise, only IPV4 is used.)
+* `NGINX_IPV6` -- boolean: enables IPV6 in the http and/or https server blocks.  (Otherwise, only IPV4 is used.)
+* `STATIC_EXPIRES` -- expiration time to use for static files; if not set, use nginx defaults
+* `VIRTUALBOX_DEV` -- boolean: disables the `sendfile` option (use this when doing development with Docker Toolbox or boot2docker with a volume synced to OS X or Windows)
+
+If you haven't created your own `nginx-site.conf` and/or `nginx-site-ssl.conf` files, and want absolute 100% backward compatibility with the default settings of `ngineered/nginx-php-fpm`, you can use the following settings:
+
+* `NGD_404=true` (use the ngineered-branded 404 handler from `ngineered/nginx-php-fpm` instead of nginx's default 404 handling)
+* `NGINX_IPV6=true`
+* `STATIC_EXPIRES=5d`
+* `VIRTUALBOX_DEV=true` (not really needed unless you're actually using virtualbox)
 
 #### PHP Front Controllers
 

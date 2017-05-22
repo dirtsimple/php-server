@@ -1,0 +1,11 @@
+#!/bin/bash
+
+# Run specified command as nginx user
+
+cmd=$@
+
+if [[ $(whoami) == 'nginx' ]]; then
+    exec /bin/bash -c "$cmd"
+else
+    exec su -p nginx -s /bin/bash -c "$cmd"
+fi

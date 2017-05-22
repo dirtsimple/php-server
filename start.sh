@@ -16,7 +16,7 @@ ssl_available=/etc/nginx/sites-available/default-ssl.conf
 ssl_enabled=/etc/nginx/sites-enabled/default-ssl.conf
 
 if [ ! -z "$DOMAIN" ] && [ -f /etc/letsencrypt/live/$DOMAIN/privkey.pem ] ; then
-    ln -sf $ssl_available $ssl_enabled
+    ln -s $ssl_available $ssl_enabled
 elif [ -L $ssl_enabled ] && [ "$(readlink $ssl_enabled)" -ef "$ssl_available" ]; then
     # Delete ssl conf only if it's a symlink we created
     rm $ssl_enabled
@@ -48,7 +48,7 @@ if [ ! -d "/var/www/html/.git" ]; then
  # Pull down code from git for our site!
  if [ ! -z "$GIT_REPO" ]; then
    # Remove the test index file if you are pulling in a git repo
-   if [ ! -z ${REMOVE_FILES} ] && ! bool "${REMOVE_FILES-true}"; then
+   if ! bool "${REMOVE_FILES-true}"; then
      echo "skiping removal of files"
    else
      rm -Rf /var/www/html/*
@@ -72,6 +72,13 @@ if [ ! -d "/var/www/html/.git" ]; then
  fi
 fi
 
+# Enable custom nginx config files if they exist
+for tag in "" "-ssl"; do
+    if [ -f /var/www/html/conf/nginx/nginx-site$tag.conf ]; then
+        gomplate /var/www/html/conf/nginx/nginx-site$tag.conf  >/etc/nginx/sites-available/default$tag.conf || exit 1
+    fi
+done
+
 # Install env-templated files if they exist
 if [ -d /var/www/html/conf-tpl ]; then
     gomplate --input-dir /var/www/html/conf-tpl --output-dir / || exit 1
@@ -79,7 +86,7 @@ fi
 
 # Try auto install for composer
 if [ -f "/var/www/html/composer.lock" ]; then
-    su -s /bin/bash -p nginx -c 'composer install --no-dev --working-dir=/var/www/html' || exit 1
+    as-nginx composer install --no-dev --working-dir=/var/www/html || exit 1
 fi
 
 # Run custom scripts
