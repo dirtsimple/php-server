@@ -1,7 +1,6 @@
 FROM richarvey/nginx-php-fpm:1.2.0
 
 VOLUME /etc/letsencrypt
-LABEL traefik.port=80
 
 ARG EXTRA_APKS
 RUN echo "http://dl-cdn.alpinelinux.org/alpine/edge/community/" >> /etc/apk/repositories && \

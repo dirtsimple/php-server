@@ -14,8 +14,8 @@ Inspired by (and implemented as a wrapper over) [ngineered/nginx-php-fpm](https:
 * Your code can provide a `conf-tpl` directory with additional configuration files to be processed w/gomplate at container start time (or you can mount replacements for this image's configuration templates under `/tpl`)
 * Ready-to-use support for most PHP "front controllers" (as used by Laravel, Drupal, Symfony, etc.): just set `PHP_CONTROLLER` to `/index.php` and `WEBROOT` to the directory that contains it.
 * HTTPS is as simple as setting a `DOMAIN`, `GIT_EMAIL`, and `LETS_ENCRYPT=true`: registration is immediate and automatic, the certs are saved in a volume by default, and renewal can be accomplished with a cron job either inside or outside the container.
-* You can set `SUPERVISOR_INCLUDES` to a space-separated list of supervisord .conf files to be included in the supervisor configuration
 * cron jobs are supported by setting `USE_CRON=true` and putting the job data in `/etc/crontabs/root` , `/etc/crontabs/nginx`, or a file in one of the `/etc/periodic/` subdirectories (via volume mount, startup script, `conf-tpl` or `/tpl` files)
+* You can set `SUPERVISOR_INCLUDES` to a space-separated list of supervisord .conf files to be included in the supervisor configuration
 * `php-fpm` pool parameters can be set with environment vars (`FPM_PM`, `FPM_MAX_CHILDREN`, `FPM_START_SERVERS`, `FPM_MIN_SPARE_SERVERS`, `FPM_MAX_SPARE_SERVERS`, `FPM_MAX_REQUESTS`)
 * nginx's `set_real_ip_from` is recursive, and supports Cloudflare (via `REAL_IP_CLOUDFLARE=true`) as well as your own load balancers/proxies (via `REAL_IP_FROM`)
 * Additional alpine APKs, PHP core extensions, and pecl extensions can be installed using the `EXTRA_APKS`, `EXTRA_EXTS`, and `EXTRA_PECL` build-time arguments, respectively.
@@ -83,9 +83,9 @@ For example, if you are deploying a Laravel application, you need to set `WEBROO
 
 HTTPS is automatically enabled if you set a `DOMAIN` and there's a private key in `/etc/letsencrypt/live/$DOMAIN/`.
 
-If you also set `LETS_ENCRYPT=true` and provide a `GIT_EMAIL` address, then certbot will be automatically run at container start to obtain the necessary cert and keys.  (You may want to make `/etc/letsencrpt` a named or local volume in order to persist the certificate across container rebuilds.)
+If you also set `LETS_ENCRYPT=true` and provide a `GIT_EMAIL` address, then certbot will be automatically run at container start to obtain the necessary cert and keys, if they're not already there.  (You may want to make `/etc/letsencrpt` a named or local volume in order to ensure the certificate persists across container rebuilds.)
 
-Certificate renewal can be done by running `/usr/bin/letsencrypt-renew` inside the container.  This can be done externally via `docker exec` or `docker-compose exec`, or by setting `USE_CRON=true` and adding an appropriate line to `/etc/crontabs/root`.
+Certificate renewal can be done by running `/usr/bin/letsencrypt-renew` inside the container.  This can be done externally via `docker exec` or `docker-compose exec`, or as a cron job inside the container by setting `USE_CRON=true` and adding an appropriate line to `/etc/crontabs/root`.
 
 ### Adding Extensions
 
