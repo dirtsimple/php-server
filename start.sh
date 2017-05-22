@@ -11,6 +11,17 @@ bool () {
 # Setup most configuration files based on environment
 gomplate --input-dir /tpl --output-dir / || exit 1
 
+# Enable SSL configuration if certs exist
+ssl_available=/etc/nginx/sites-available/default-ssl.conf
+ssl_enabled=/etc/nginx/sites-enabled/default-ssl.conf
+
+if [ ! -z "$DOMAIN" ] && [ -f /etc/letsencrypt/live/$DOMAIN/privkey.pem ] ; then
+    ln -sf $ssl_available $ssl_enabled
+elif [ -L $ssl_enabled ] && [ "$(readlink $ssl_enabled)" -ef "$ssl_available" ]; then
+    # Delete ssl conf only if it's a symlink we created
+    rm $ssl_enabled
+fi
+
 # Setup SSH configuration
 chmod 0700 /root/.ssh
 if [ ! -z "$SSH_KEY" ]; then

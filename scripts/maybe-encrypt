@@ -1,0 +1,12 @@
+#!/bin/bash
+
+# Don't run if any params are missing
+if [ -z "$WEBROOT" ] || [ -z "$GIT_EMAIL" ] || [ -z "$DOMAIN" ]; then
+    exit 0;
+fi
+
+# Only run if the cert isn't already there
+if [ ! -f /etc/letsencrypt/live/$DOMAIN/privkey.pem ] ; then
+    /usr/bin/letsencrypt-setup
+fi
+

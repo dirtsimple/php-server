@@ -1,4 +1,6 @@
 FROM richarvey/nginx-php-fpm:1.2.0
+
+VOLUME /etc/letsencrypt
 LABEL traefik.port=80
 
 ARG EXTRA_APKS
@@ -18,5 +20,8 @@ RUN if [ ! -z "$EXTRA_PECL" ] ; then \
         docker-php-source delete; \
     fi
 
-ADD tpl /tpl
-ADD start.sh /start.sh
+COPY tpl /tpl
+COPY start.sh /start.sh
+COPY scripts/ /usr/bin/
+
+ENV WEBROOT /var/www/html
