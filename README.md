@@ -10,16 +10,16 @@ This is a docker image for an alpine nginx + php-fpm combo container, with suppo
 
 Inspired by (and implemented as a wrapper over) [ngineered/nginx-php-fpm](https://github.com/ngineered/nginx-php-fpm), this image supports all of that image's [configuration flags](https://github.com/ngineered/nginx-php-fpm/blob/master/docs/config_flags.md), plus the following enhancements and bug fixes:
 
-* Configuration files are generated using [gomplate](https://github.com/hairyhenderson/gomplate) templates instead of `sed`
+* Configuration files are generated using [gomplate](https://github.com/hairyhenderson/gomplate) templates instead of `sed`, and boolean environment variables can be set to `true` or `false` , not just `1` or `0`
 * Your code can provide a `conf-tpl` directory with additional configuration files to be processed w/gomplate at container start time (or you can mount replacements for this image's configuration templates under `/tpl`)
 * Ready-to-use support for most PHP "front controllers" (as used by Laravel, Drupal, Symfony, etc.): just set `PHP_CONTROLLER` to `/index.php` and `WEBROOT` to the directory containing it.
 * You can set `SUPERVISOR_INCLUDES` to a space-separated list of supervisord .conf files to be included in the supervisor configuration
-* cron jobs are supported by setting `USE_CRON=1` and putting the job data in `/etc/crontabs/root` , `/etc/crontabs/nginx`, or a file in one of the `/etc/periodic/` subdirectories (via volume mount, startup script, `conf-tpl` or `/tpl` files)
+* cron jobs are supported by setting `USE_CRON=true` and putting the job data in `/etc/crontabs/root` , `/etc/crontabs/nginx`, or a file in one of the `/etc/periodic/` subdirectories (via volume mount, startup script, `conf-tpl` or `/tpl` files)
 * `php-fpm` pool parameters can be set with environment vars (`FPM_PM`, `FPM_MAX_CHILDREN`, `FPM_START_SERVERS`, `FPM_MIN_SPARE_SERVERS`, `FPM_MAX_SPARE_SERVERS`, `FPM_MAX_REQUESTS`)
-* nginx's `set_real_ip_from` is recursive, and supports Cloudflare (via `REAL_IP_CLOUDFLARE=1`) as well as your own load balancers/proxies (via `REAL_IP_FROM`)
+* nginx's `set_real_ip_from` is recursive, and supports Cloudflare (via `REAL_IP_CLOUDFLARE=true`) as well as your own load balancers/proxies (via `REAL_IP_FROM`)
 * Additional alpine APKs, PHP core extensions, and pecl extensions can be installed using the `EXTRA_APKS`, `EXTRA_EXTS`, and `EXTRA_PECL` build-time arguments, respectively.
 * composer-installed files are properly chowned, and cloned files are chowned to the correct `PUID`/`PGID` instead of the default `nginx` uid/gid
-* `sendfile` is turned on for optimal static file performance, unless you set `VIRTUALBOX_DEV=1`
+* `sendfile` is turned on for optimal static file performance, unless you set `VIRTUALBOX_DEV=true`
 * Configuration files don't grow on each container restart
 * nginx and composer are run as the nginx/`PUID` user, not root
 
@@ -29,13 +29,13 @@ This image assumes your primary application code will be found in `/var/www/html
 
 If a `GIT_REPO` is specified, the given repository will be cloned to `/var/www/html` at container startup, unless a `/var/www/html/.git` directory is already present  (e.g. in the case of a restart, or a mounted checkout).
 
-(Important: do *not* both mount your code as a volume *and* provide a `GIT_REPO`: your code will be **erased** unless it's a git checkout, or you set `REMOVE_FILES=0` in your environment.)
+(Important: do *not* both mount your code as a volume *and* provide a `GIT_REPO`: your code will be **erased** unless it's a git checkout, or you set `REMOVE_FILES=false` in your environment.)
 
 Whether you're using a `GIT_REPO` or not, this image checks for the following things in the code directory (i.e., `/var/www/html`) during startup:
 
 * a `composer.lock` file (triggering an automatic `composer install` run if found)
 * a `conf-tpl/` subdirectory (triggering configuration file updates from any supplied templates; see next section for details)
-* a `scripts/` subdirectory (containing startup scripts that will be run in alphanumeric order, if the `RUN_SCRIPTS` variable is set to `1`)
+* a `scripts/` subdirectory (containing startup scripts that will be run in alphanumeric order, if the `RUN_SCRIPTS` variable is set to `1` or `true`)
 
 Note: if you are using a framework that exposes a subdirectory (like `web` or `public`) as the actual directory to be served by nginx, you must set the `WEBROOT` environment variable to that subdirectory (e.g. `/var/www/html/public`).  (Assuming you don't override the web server configuration; see more below.)
 

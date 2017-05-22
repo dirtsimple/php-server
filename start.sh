@@ -1,5 +1,13 @@
 #!/bin/bash
 
+bool () {
+    # for consistency, exactly match how gomplate's bool function works
+    case $1 in
+        true|True|T|t|1) return 0 ;;  # these strings are true
+                      *) return 1 ;;  # all others are false
+    esac
+}
+
 # Setup most configuration files based on environment
 gomplate --input-dir /tpl --output-dir / || exit 1
 
@@ -29,7 +37,7 @@ if [ ! -d "/var/www/html/.git" ]; then
  # Pull down code from git for our site!
  if [ ! -z "$GIT_REPO" ]; then
    # Remove the test index file if you are pulling in a git repo
-   if [ ! -z ${REMOVE_FILES} ] && [ ${REMOVE_FILES} == 0 ]; then
+   if [ ! -z ${REMOVE_FILES} ] && ! bool "${REMOVE_FILES}"; then
      echo "skiping removal of files"
    else
      rm -Rf /var/www/html/*
@@ -42,7 +50,7 @@ if [ ! -d "/var/www/html/.git" ]; then
    if [ -z "$GIT_USERNAME" ] && [ -z "$GIT_PERSONAL_TOKEN" ]; then
      GIT_COMMAND=${GIT_COMMAND}" ${GIT_REPO}"
    else
-    if [[ "$GIT_USE_SSH" == "1" ]]; then
+    if bool "$GIT_USE_SSH"; then
       GIT_COMMAND=${GIT_COMMAND}" ${GIT_REPO}"
     else
       GIT_COMMAND=${GIT_COMMAND}" https://${GIT_USERNAME}:${GIT_PERSONAL_TOKEN}@${GIT_REPO}"
@@ -64,7 +72,7 @@ if [ -f "/var/www/html/composer.lock" ]; then
 fi
 
 # Run custom scripts
-if [[ "$RUN_SCRIPTS" == "1" ]] ; then
+if bool "$RUN_SCRIPTS" ; then
   if [ -d "/var/www/html/scripts/" ]; then
     # make scripts executable incase they aren't
     chmod -Rf 750 /var/www/html/scripts/*
