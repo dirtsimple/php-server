@@ -12,7 +12,7 @@ Inspired by (and implemented as a wrapper over) [ngineered/nginx-php-fpm](https:
 
 * Configuration files are generated using [gomplate](https://github.com/hairyhenderson/gomplate) templates instead of `sed`, and boolean environment variables can be set to `true` or `false` , not just `1` or `0`
 * Your code can provide a `conf-tpl` directory with additional configuration files to be processed w/gomplate at container start time (or you can mount replacements for this image's configuration templates under `/tpl`)
-* Ready-to-use support for most PHP "front controllers" (as used by Laravel, Drupal, Symfony, etc.): just set `PHP_CONTROLLER` to `/index.php` and `WEBROOT` to the directory containing it.
+* Ready-to-use support for most PHP "front controllers" (as used by Laravel, Drupal, Symfony, etc.): just set `PHP_CONTROLLER` to `/index.php` and `WEBROOT` to the directory that contains it.
 * HTTPS is as simple as setting a `DOMAIN`, `GIT_EMAIL`, and `LETS_ENCRYPT=true`: registration is immediate and automatic, the certs are saved in a volume by default, and renewal can be accomplished with a cron job either inside or outside the container.
 * You can set `SUPERVISOR_INCLUDES` to a space-separated list of supervisord .conf files to be included in the supervisor configuration
 * cron jobs are supported by setting `USE_CRON=true` and putting the job data in `/etc/crontabs/root` , `/etc/crontabs/nginx`, or a file in one of the `/etc/periodic/` subdirectories (via volume mount, startup script, `conf-tpl` or `/tpl` files)
@@ -59,10 +59,10 @@ Template files are just plain text, except that they can contain Go template cod
 
 This image generates and uses the following configuration files in `/etc/nginx`, any or all of which can be replaced using template files under your code's `conf-tpl/etc/nginx` subdirectory:
 
+* `app.conf` -- the main app configuration for running PHP and serving files under `WEBROOT`.  In general, if you need to change your nginx configuration, this is the first place to look.  Its contents are included *inside* of the `server {}` blocks for both the http and https servers, so they can both be configured from one file.
 * `nginx.conf` -- the main server configuration, with an `http` block that includes any server configs listed in the `sites-enabled/` subdirectory
 * `sites-available/default.conf` -- the default `server` block for the HTTP protocol; includes `app.conf` to specify locations and server-level settings other than the listening port/protocol.  (This file is symlinked from `sites-enabled` by default.)
 * `sites-available/default-ssl.conf` -- the default `server` block for the HTTPS protocol; includes `app.conf` to specify locations and server-level settings other than the listening port/protocol/certs.  (This file is symlinked into `sites-enabled` if and only if a private key is available in `/etc/letsencrypt/live/$DOMAIN`.)
-* `app.conf` -- the main app configuration for running PHP and serving files under `WEBROOT`
 * `cloudflare` -- the settings needed for correct IP detection/logging when serving via cloudflare; this file is automatically included by `nginx.conf` if `REAL_IP_CLOUDFLARE`is set to `1`.
 
 #### Environment
