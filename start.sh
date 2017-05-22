@@ -37,7 +37,7 @@ if [ ! -d "/var/www/html/.git" ]; then
  # Pull down code from git for our site!
  if [ ! -z "$GIT_REPO" ]; then
    # Remove the test index file if you are pulling in a git repo
-   if [ ! -z ${REMOVE_FILES} ] && ! bool "${REMOVE_FILES}"; then
+   if [ ! -z ${REMOVE_FILES} ] && ! bool "${REMOVE_FILES-true}"; then
      echo "skiping removal of files"
    else
      rm -Rf /var/www/html/*
