@@ -8,8 +8,16 @@ bool () {
     esac
 }
 
-# Setup most configuration files based on environment
-gomplate --input-dir /tpl --output-dir / || exit 1
+process-templates-from() {
+    if [ -d "$1" ]; then
+        # Setup configuration files based on environment
+        gomplate --input-dir "$1" --output-dir / || exit 1
+        # Make executable inputs into executable outputs
+        for f in $(find "$1" -type f -perm -111); do chmod +x "$2/${f#$1}"; done
+    fi
+}
+
+process-templates-from /tpl
 
 # Enable SSL configuration if certs exist
 ssl_available=/etc/nginx/sites-available/default-ssl.conf
@@ -80,9 +88,7 @@ for tag in "" "-ssl"; do
 done
 
 # Install env-templated files if they exist
-if [ -d /var/www/html/conf-tpl ]; then
-    gomplate --input-dir /var/www/html/conf-tpl --output-dir / || exit 1
-fi
+process-templates-from /var/www/html/conf-tpl
 
 # Try auto install for composer
 if [ -f "/var/www/html/composer.lock" ]; then
