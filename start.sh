@@ -5,7 +5,7 @@ process-templates-from() {
         # Setup configuration files based on environment
         gomplate --input-dir "$1" --output-dir / || exit 1
         # Make executable inputs into executable outputs
-        for f in $(find "$1" -type f -perm -111); do chmod +x "$2/${f#$1}"; done
+        for f in $(find "$1" -type f -perm -111); do chmod +x "${f#$1}"; done
     fi
 }
 
