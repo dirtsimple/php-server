@@ -98,6 +98,8 @@ If you want the key and certificate to be automatically generated, just set `LET
 
 If your container isn't restarted often enough to ensure timely certificate renewals, you can set `USE_CRON=true`, and an automatic renewal attempt will also happen on the first of each month at approximately 5am UTC.
 
+(Note: certbot uses the "webroot" method of authentication, so `WEBROOT` must be set to the document root directory for `DOMAIN`, or else certificate authentication will fail.  Once a certificate has been requested, the `WEBROOT` must remain the same for all future renewals.)
+
 ### Adding Extensions
 
 Additional alpine APKs, PHP core extensions, and pecl extensions can be installed using the `EXTRA_APKS`, `EXTRA_EXTS`, and `EXTRA_PECL` build-time arguments, respectively.  For example, one might use this in a `docker-compose.yml` to build a server for Moodle:
