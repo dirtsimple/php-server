@@ -75,7 +75,7 @@ fi
 # Enable custom nginx config files if they exist
 for tag in "" "-ssl"; do
     if [ -f /var/www/html/conf/nginx/nginx-site$tag.conf ]; then
-        gomplate /var/www/html/conf/nginx/nginx-site$tag.conf  >/etc/nginx/sites-available/default$tag.conf || exit 1
+        cp /var/www/html/conf/nginx/nginx-site$tag.conf  /etc/nginx/sites-available/default$tag.conf
     fi
 done
 
