@@ -1,13 +1,5 @@
 #!/bin/bash
 
-bool () {
-    # for consistency, exactly match how gomplate's bool function works
-    case $1 in
-        true|TRUE|True|T|t|1) return 0 ;;  # these strings are true
-                           *) return 1 ;;  # all others are false
-    esac
-}
-
 process-templates-from() {
     if [ -d "$1" ]; then
         # Setup configuration files based on environment

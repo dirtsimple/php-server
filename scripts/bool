@@ -1,0 +1,8 @@
+#!/bin/sh
+
+# for consistency, exactly match how gomplate's bool function works
+case $1 in
+    true|TRUE|True|T|t|1) exec true  ;;  # these strings are true
+                       *) exec false ;;  # all others are false
+esac
+
