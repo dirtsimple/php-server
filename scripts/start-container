@@ -2,14 +2,11 @@
 
 # Set up CODE_BASE and WEBROOT
 
-CODE_BASE=${CODE_BASE-/var/www/html}
-CODE_BASE=${CODE_BASE%/}
+CODE_BASE=${CODE_BASE:-/var/www/html}
+export CODE_BASE=${CODE_BASE%/}
 
-if [ -z "$WEBROOT" ]; then
-    WEBROOT=${CODE_BASE}
-fi
-
-export CODE_BASE WEBROOT
+WEBROOT=${WEBROOT:-${CODE_BASE}${PUBLIC_DIR:+/${PUBLIC_DIR#/}}}
+export WEBROOT=${WEBROOT%/}
 
 # Configuration templates
 
