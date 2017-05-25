@@ -36,7 +36,7 @@ If a `GIT_REPO` is specified, the given repository will be cloned to the `CODE_B
 
 Whether you're using a `GIT_REPO` or not, this image checks for the following things in the `CODE_BASE` directory during startup:
 
-* a `composer.lock` file (triggering an automatic `composer install` run if found)
+* a `composer.json` file (triggering an automatic `composer install` run if found)
 * a `conf-tpl/` subdirectory (triggering configuration file updates from any supplied templates; see next section for details)
 * a `scripts/` subdirectory (containing startup scripts that will be run as root in alphanumeric order, if the `RUN_SCRIPTS` variable is set to `1` or `true`)
 
