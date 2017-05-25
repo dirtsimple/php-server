@@ -20,8 +20,8 @@ RUN if [ ! -z "$EXTRA_PECL" ] ; then \
     fi
 
 COPY tpl /tpl
-COPY start.sh /start.sh
 COPY scripts/ /usr/bin/
 
 ENV WEBROOT /var/www/html
 ENV GIT_SSH /usr/bin/git-ssh
+CMD ["/usr/bin/start-container"]
