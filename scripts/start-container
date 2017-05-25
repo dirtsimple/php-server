@@ -73,7 +73,7 @@ if [ ! -d "$CODE_BASE/.git" ]; then
                 GIT_COMMAND=${GIT_COMMAND}" https://${GIT_USERNAME}:${GIT_PERSONAL_TOKEN}@${GIT_REPO}"
             fi
         fi
-        as-nginx ssh-agent ${GIT_COMMAND-git pull} || exit 1
+        as-nginx ssh-agent ${GIT_COMMAND} || exit 1
     fi
 fi
 

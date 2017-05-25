@@ -1,0 +1,17 @@
+#!/bin/bash
+
+if [ -z "$GIT_EMAIL" ] || [ -z "$GIT_NAME" ] ; then
+    echo "You need a \$GIT_NAME and \$GIT_EMAIL for git pull to work"
+    exit 1
+fi
+
+cd ${CODE_BASE:-/var/www/html}
+as-nginx ssh-agent git pull || exit 1
+
+# Force the container to stop, so that composer, config files, etc. get updated
+# This is better than trying to handle all the corner cases of webserver state,
+# custom supervisort tasks, etc.
+
+supervisorctl shutdown
+
+
