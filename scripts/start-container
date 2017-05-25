@@ -1,12 +1,55 @@
 #!/bin/bash
 
-# Set up CODE_BASE and WEBROOT
+main() {
+    setup-environment-vars
+    generate-system-configuration
+    enable-or-disable-ssl-config
+    setup-nginx-user
 
-CODE_BASE=${CODE_BASE:-/var/www/html}
-export CODE_BASE=${CODE_BASE%/}
+    if ! checkout-exists; then
+        perform-git-checkout
+    fi
 
-WEBROOT=${WEBROOT:-${CODE_BASE}${PUBLIC_DIR:+/${PUBLIC_DIR#/}}}
-export WEBROOT=${WEBROOT%/}
+    generate-user-configuration
+
+    if composer.json-exists; then
+        run-composer-install
+    fi
+
+    if user-scripts-exist; then
+        run-user-scripts
+    fi
+
+    exec-supervisord
+}
+
+checkout-exists()      { [ -d "$CODE_BASE/.git" ]; }
+composer.json-exists() { [ -f "$CODE_BASE/composer.json" ]; }
+user-scripts-exist()   { [ -d "$CODE_BASE/scripts/" ]; }
+
+
+setup-environment-vars() {
+    # Set up CODE_BASE and WEBROOT
+
+    CODE_BASE=${CODE_BASE:-/var/www/html}
+    export CODE_BASE=${CODE_BASE%/}
+
+    WEBROOT=${WEBROOT:-${CODE_BASE}${PUBLIC_DIR:+/${PUBLIC_DIR#/}}}
+    export WEBROOT=${WEBROOT%/}
+}
+
+
+generate-system-configuration() {
+
+    process-templates-from /tpl
+
+    # Git config
+    [[ -z "$GIT_NAME" ]]  || git config --system user.name  \"$GIT_NAME\";
+    [[ -z "$GIT_EMAIL" ]] || git config --system user.email \"$GIT_EMAIL\";
+    git config --system push.default = simple
+
+}
+
 
 # Configuration templates
 
@@ -19,39 +62,40 @@ process-templates-from() {
     fi
 }
 
-process-templates-from /tpl
 
-# Enable SSL configuration if certs exist
-ssl_available=/etc/nginx/sites-available/default-ssl.conf
-ssl_enabled=/etc/nginx/sites-enabled/default-ssl.conf
+enable-or-disable-ssl-config() {
 
-if [ ! -z "$DOMAIN" ] && [ -f /etc/letsencrypt/live/$DOMAIN/privkey.pem ] ; then
-    [[ -L $ssl_enabled ]] || ln -s $ssl_available $ssl_enabled
-elif [ -L $ssl_enabled ] && [ "$(readlink $ssl_enabled)" -ef "$ssl_available" ]; then
-    # Delete ssl conf only if it's a symlink we created
-    rm $ssl_enabled
-fi
+    # Enable SSL configuration if certs exist
 
-# Re-create nginx user w/specified UID/GID
-if [ ! -z "$PUID" ]; then
-  if [ -z "$PGID" ]; then
-    PGID=${PUID}
-  fi
-  deluser nginx
-  addgroup -g ${PGID} nginx
-  adduser -D -S -h /var/cache/nginx -s /sbin/nologin -G nginx -u ${PUID} nginx
-else
-  # Always chown webroot for better mounting
-  chown -Rf nginx.nginx $CODE_BASE
-fi
+    ssl_available=/etc/nginx/sites-available/default-ssl.conf
+    ssl_enabled=/etc/nginx/sites-enabled/default-ssl.conf
 
-# Git config
-[[ -z "$GIT_NAME" ]]  || git config --system user.name  \"$GIT_NAME\";
-[[ -z "$GIT_EMAIL" ]] || git config --system user.email \"$GIT_EMAIL\";
-git config --system push.default = simple
+    if [ ! -z "$DOMAIN" ] && [ -f /etc/letsencrypt/live/$DOMAIN/privkey.pem ] ; then
+        [[ -L $ssl_enabled ]] || ln -s $ssl_available $ssl_enabled
+    elif [ -L $ssl_enabled ] && [ "$(readlink $ssl_enabled)" -ef "$ssl_available" ]; then
+        # Delete ssl conf only if it's a symlink we created
+        rm $ssl_enabled
+    fi
 
-# Dont pull code down if the .git folder exists
-if [ ! -d "$CODE_BASE/.git" ]; then
+}
+
+
+setup-nginx-user() {
+    # Re-create nginx user w/specified UID/GID
+    if [ ! -z "$PUID" ]; then
+        if [ -z "$PGID" ]; then
+            PGID=${PUID}
+        fi
+        deluser nginx
+        addgroup -g ${PGID} nginx
+        adduser -D -S -h /var/cache/nginx -s /sbin/nologin -G nginx -u ${PUID} nginx
+    else
+        # Always chown webroot for better mounting
+        chown -Rf nginx.nginx $CODE_BASE
+    fi
+}
+
+perform-git-checkout() {
     # Pull down code from git for our site!
     if [ ! -z "$GIT_REPO" ]; then
         # Remove the test index file if you are pulling in a git repo
@@ -75,35 +119,46 @@ if [ ! -d "$CODE_BASE/.git" ]; then
         fi
         as-nginx ${GIT_COMMAND} || exit 1
     fi
-fi
+}
 
-# Enable custom nginx config files if they exist
-for tag in "" "-ssl"; do
-    if [ -f $CODE_BASE/conf/nginx/nginx-site$tag.conf ]; then
-        cp $CODE_BASE/conf/nginx/nginx-site$tag.conf  /etc/nginx/sites-available/default$tag.conf
-    fi
-done
+generate-user-configuration() {
 
-# Install env-templated files if they exist
-process-templates-from $CODE_BASE/conf-tpl || exit 1
+    # Enable custom nginx config files if they exist
+    for tag in "" "-ssl"; do
+        if [ -f $CODE_BASE/conf/nginx/nginx-site$tag.conf ]; then
+            cp $CODE_BASE/conf/nginx/nginx-site$tag.conf  /etc/nginx/sites-available/default$tag.conf
+        fi
+    done
 
-# Try auto install for composer
-if [ -f "$CODE_BASE/composer.lock" ]; then
+    # Install env-templated files if they exist
+    process-templates-from $CODE_BASE/conf-tpl
+
+}
+
+
+run-composer-install() {
+    # Try auto install for composer
     as-nginx composer install --no-dev --working-dir=$CODE_BASE || exit 1
-fi
+}
+
 
 # Run custom scripts
-if bool "$RUN_SCRIPTS" ; then
-    if [ -d "$CODE_BASE/scripts/" ]; then
+
+run-user-scripts() {
+    if bool "$RUN_SCRIPTS" ; then
         # make scripts executable incase they aren't
         chmod -Rf 750 $CODE_BASE/scripts/*
         # run scripts in number order
         for i in $CODE_BASE/scripts/*; do $CODE_BASE/scripts/$i ; done
-    else
-        echo "Can't find script directory"
     fi
-fi
+}
 
-# Start supervisord and services
-exec /usr/bin/supervisord -n -c /etc/supervisord.conf
+
+exec-supervisord() {
+    # Start supervisord and services
+    exec /usr/bin/supervisord -n -c /etc/supervisord.conf
+}
+
+
+main
 
