@@ -6,5 +6,5 @@ else
     mode=renew
 fi
 
-GIT_EMAIL="$LETS_ENCRYPT" WEBROOT="${WEBROOT-/var/www/html}" /usr/bin/letsencrypt-$mode
+GIT_EMAIL="$LETS_ENCRYPT" /usr/bin/letsencrypt-$mode
 

@@ -22,6 +22,6 @@ RUN if [ ! -z "$EXTRA_PECL" ] ; then \
 COPY tpl /tpl
 COPY scripts/ /usr/bin/
 
-ENV WEBROOT /var/www/html
+ENV CODE_BASE /var/www/html
 ENV GIT_SSH /usr/bin/git-ssh
 CMD ["/usr/bin/start-container"]

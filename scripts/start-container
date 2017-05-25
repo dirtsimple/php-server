@@ -1,5 +1,18 @@
 #!/bin/bash
 
+# Set up CODE_BASE and WEBROOT
+
+CODE_BASE=${CODE_BASE-/var/www/html}
+CODE_BASE=${CODE_BASE%/}
+
+if [ -z "$WEBROOT" ]; then
+    WEBROOT=${CODE_BASE}
+fi
+
+export CODE_BASE WEBROOT
+
+# Configuration templates
+
 process-templates-from() {
     if [ -d "$1" ]; then
         # Setup configuration files based on environment
@@ -32,7 +45,7 @@ if [ ! -z "$PUID" ]; then
   adduser -D -S -h /var/cache/nginx -s /sbin/nologin -G nginx -u ${PUID} nginx
 else
   # Always chown webroot for better mounting
-  chown -Rf nginx.nginx /var/www/html
+  chown -Rf nginx.nginx $CODE_BASE
 fi
 
 # Git config
@@ -41,58 +54,57 @@ fi
 git config --system push.default = simple
 
 # Dont pull code down if the .git folder exists
-if [ ! -d "/var/www/html/.git" ]; then
- # Pull down code from git for our site!
- if [ ! -z "$GIT_REPO" ]; then
-   # Remove the test index file if you are pulling in a git repo
-   if ! bool "${REMOVE_FILES-true}"; then
-     echo "skiping removal of files"
-   else
-     rm -Rf /var/www/html/*
-   fi
-   GIT_COMMAND='git clone '
-   if [ ! -z "$GIT_BRANCH" ]; then
-     GIT_COMMAND=${GIT_COMMAND}" -b ${GIT_BRANCH}"
-   fi
-
-   if [ -z "$GIT_USERNAME" ] && [ -z "$GIT_PERSONAL_TOKEN" ]; then
-     GIT_COMMAND=${GIT_COMMAND}" ${GIT_REPO}"
-   else
-    if bool "$GIT_USE_SSH"; then
-      GIT_COMMAND=${GIT_COMMAND}" ${GIT_REPO}"
-    else
-      GIT_COMMAND=${GIT_COMMAND}" https://${GIT_USERNAME}:${GIT_PERSONAL_TOKEN}@${GIT_REPO}"
+if [ ! -d "$CODE_BASE/.git" ]; then
+    # Pull down code from git for our site!
+    if [ ! -z "$GIT_REPO" ]; then
+        # Remove the test index file if you are pulling in a git repo
+        if ! bool "${REMOVE_FILES-true}"; then
+            echo "skipping removal of files"
+        else
+            rm -Rf $CODE_BASE/*
+        fi
+        GIT_COMMAND='git clone '
+        if [ ! -z "$GIT_BRANCH" ]; then
+            GIT_COMMAND=${GIT_COMMAND}" -b ${GIT_BRANCH}"
+        fi
+        if [ -z "$GIT_USERNAME" ] && [ -z "$GIT_PERSONAL_TOKEN" ]; then
+            GIT_COMMAND=${GIT_COMMAND}" ${GIT_REPO}"
+        else
+            if bool "$GIT_USE_SSH"; then
+                GIT_COMMAND=${GIT_COMMAND}" ${GIT_REPO}"
+            else
+                GIT_COMMAND=${GIT_COMMAND}" https://${GIT_USERNAME}:${GIT_PERSONAL_TOKEN}@${GIT_REPO}"
+            fi
+        fi
+        as-nginx ssh-agent ${GIT_COMMAND-git pull} || exit 1
     fi
-   fi
-   as-nginx ssh-agent ${GIT_COMMAND} /var/www/html || exit 1
- fi
 fi
 
 # Enable custom nginx config files if they exist
 for tag in "" "-ssl"; do
-    if [ -f /var/www/html/conf/nginx/nginx-site$tag.conf ]; then
-        cp /var/www/html/conf/nginx/nginx-site$tag.conf  /etc/nginx/sites-available/default$tag.conf
+    if [ -f $CODE_BASE/conf/nginx/nginx-site$tag.conf ]; then
+        cp $CODE_BASE/conf/nginx/nginx-site$tag.conf  /etc/nginx/sites-available/default$tag.conf
     fi
 done
 
 # Install env-templated files if they exist
-process-templates-from /var/www/html/conf-tpl
+process-templates-from $CODE_BASE/conf-tpl || exit 1
 
 # Try auto install for composer
-if [ -f "/var/www/html/composer.lock" ]; then
-    as-nginx ssh-agent composer install --no-dev --working-dir=/var/www/html || exit 1
+if [ -f "$CODE_BASE/composer.lock" ]; then
+    as-nginx ssh-agent composer install --no-dev --working-dir=$CODE_BASE || exit 1
 fi
 
 # Run custom scripts
 if bool "$RUN_SCRIPTS" ; then
-  if [ -d "/var/www/html/scripts/" ]; then
-    # make scripts executable incase they aren't
-    chmod -Rf 750 /var/www/html/scripts/*
-    # run scripts in number order
-    for i in `ls /var/www/html/scripts/`; do /var/www/html/scripts/$i ; done
-  else
-    echo "Can't find script directory"
-  fi
+    if [ -d "$CODE_BASE/scripts/" ]; then
+        # make scripts executable incase they aren't
+        chmod -Rf 750 $CODE_BASE/scripts/*
+        # run scripts in number order
+        for i in $CODE_BASE/scripts/*; do $CODE_BASE/scripts/$i ; done
+    else
+        echo "Can't find script directory"
+    fi
 fi
 
 # Start supervisord and services

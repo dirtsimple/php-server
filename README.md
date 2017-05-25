@@ -7,6 +7,7 @@ This is a docker image for an alpine nginx + php-fpm combo container, with suppo
 * Build arguments to allow adding extra packages and PHP extensions
 * Environment-based templating of any configuration file in the container at startup
 * Running any user-supplied startup scripts
+* 100% automated HTTPS certificate management via certbot and Let's Encrypt
 
 Inspired by (and implemented as a backward-compatible wrapper over) [ngineered/nginx-php-fpm](https://github.com/ngineered/nginx-php-fpm), this image supports all of that image's [configuration flags](https://github.com/ngineered/nginx-php-fpm/blob/master/docs/config_flags.md), plus the following enhancements and bug fixes:
 
@@ -23,31 +24,32 @@ Inspired by (and implemented as a backward-compatible wrapper over) [ngineered/n
 * `sendfile` is turned on for optimal static file performance, unless you set `VIRTUALBOX_DEV=true`
 * Configuration files don't grow on each container restart
 * nginx and composer are run as the nginx/`PUID` user, not root (and there's a handy `as-nginx` script for running other things that way)
+* You can mount your code anywhere, not just `/var/www/html` (just set `CODE_BASE` wherever you like)
 
 ### Adding Your Code
 
-This image assumes your primary application code will be found in `/var/www/html`.  You can place it there via a volume mount, installation in a derived image, or by specifying a `GIT_REPO` environment variable targeting your code.
+This image assumes your primary application code will be found in the directory given by `CODE_BASE` (which defaults to `/var/www/html`).  You can place it there via a volume mount, installation in a derived image, or by specifying a `GIT_REPO` environment variable targeting your code.
 
-If a `GIT_REPO` is specified, the given repository will be cloned to `/var/www/html` at container startup, unless a `/var/www/html/.git` directory is already present  (e.g. in the case of a restart, or a mounted checkout).
+If a `GIT_REPO` is specified, the given repository will be cloned to the `CODE_BASE` directory at container startup, unless a `.git` subdirectory is already present  (e.g. in the case of a restart, or a mounted checkout).
 
 (Important: do *not* both mount your code as a volume *and* provide a `GIT_REPO`: your code will be **erased** unless it's a git checkout, or you set `REMOVE_FILES=false` in your environment.)
 
-Whether you're using a `GIT_REPO` or not, this image checks for the following things in the code directory (i.e., `/var/www/html`) during startup:
+Whether you're using a `GIT_REPO` or not, this image checks for the following things in the `CODE_BASE` directory during startup:
 
 * a `composer.lock` file (triggering an automatic `composer install` run if found)
 * a `conf-tpl/` subdirectory (triggering configuration file updates from any supplied templates; see next section for details)
 * a `scripts/` subdirectory (containing startup scripts that will be run as root in alphanumeric order, if the `RUN_SCRIPTS` variable is set to `1` or `true`)
 
-Note: if you are using a framework that exposes a subdirectory (like `web` or `public`) as the actual directory to be served by nginx, you must set the `WEBROOT` environment variable to that subdirectory (e.g. `/var/www/html/public`).  (Assuming you don't override the web server configuration; see more below.)
+Note: if you are using a framework that exposes a subdirectory (like `web` or `public`) as the actual directory to be served by nginx, you must set the `WEBROOT` environment variable to that subdirectory (e.g. `$CODE_BASE/public`).  (Assuming you don't override the web server configuration; see more below.)
 
 ### Configuration Templating
 
 This image uses [gomplate](https://github.com/hairyhenderson/gomplate) to generate arbitrary configuration files from templates.  Templates are loaded from two locations:
 
 * The `/tpl` directory (created at build-time and supplied by this image)
-* The `/var/www/html/conf-tpl` directory, found in your code checkout, volume mount, or derived image
+* The `$CODE_BASE/conf-tpl` directory, found in your code checkout, volume mount, or derived image
 
-The path of an output configuration file is derived from its relative path.  So, for example, the default template for `/etc/supervisord.conf` can be found in `/tpl/etc/supervisord.conf`, and can be overrridden by a template in `/var/www/html/conf-tpl/etc/supervisord.conf`.
+The path of an output configuration file is derived from its relative path.  So, for example, the default template for `/etc/supervisord.conf` can be found in `/tpl/etc/supervisord.conf`, and can be overrridden by a template in `$CODE_BASE/conf-tpl/etc/supervisord.conf`.
 
 Templates found in `/tpl` are applied at the very beginning of container startup, before code is cloned or startup scripts are run.  Templates in `conf-tpl/` are applied just after the code checkout (if any), and just before `composer install` (if applicable).
 
@@ -66,7 +68,7 @@ This image generates and uses the following configuration files in `/etc/nginx`,
 * `sites-available/default-ssl.conf` -- the default `server` block for the HTTPS protocol; includes `app.conf` to specify locations and server-level settings other than the listening port/protocol/certs.  (This file is symlinked into `sites-enabled` if and only if a private key is available in `/etc/letsencrypt/live/$DOMAIN`.)
 * `cloudflare` -- the settings needed for correct IP detection/logging when serving via cloudflare; this file is automatically included by `nginx.conf` if `REAL_IP_CLOUDFLARE`is set to `1`.
 
-For backwards compatibility with `ngineered/nginx-php-fpm`, you can include a `conf/nginx/nginx-site.conf` and/or `conf/nginx/nginx-site-ssl.conf` in your code at `/var/www/html`.  Doing this will, however, disable any features of `app.conf` that you don't copy into them.  It's recommended that you use `conf-tpl/etc/nginx/app.conf` instead, going forward.
+For backwards compatibility with `ngineered/nginx-php-fpm`, you can include a `conf/nginx/nginx-site.conf` and/or `conf/nginx/nginx-site-ssl.conf` in your `CODE_BASE` directory.  Doing this will, however, disable any features of `app.conf` that you don't copy into them.  It's recommended that you use `conf-tpl/etc/nginx/app.conf` instead, going forward.
 
 #### Environment
 
@@ -88,7 +90,7 @@ If you haven't created your own `nginx-site.conf` and/or `nginx-site-ssl.conf` f
 
 Many PHP frameworks use a central entry point like `index.php` to process all dynamic paths in the application.  If your app is like this, you need to set `PHP_CONTROLLER` to the path of this php file, relative to the document root and beginning with a `/`.  In addition, if the document root isn't the root of your code, you need to set `WEBROOT` as well.
 
-For example, if you are deploying a Laravel application, you need to set `WEBROOT` to `/var/www/html/public`, and `PHP_CONTROLLER` to `/index.php`.  Then, any URLs that don't resolve to static files in `public` will be routed through `/index.php` instead of producing nginx 404 errors.
+For example, if you are deploying a Laravel application, you need to set `WEBROOT` to `$CODE_BASE/public`, and `PHP_CONTROLLER` to `/index.php`.  Then, any URLs that don't resolve to static files in `public` will be routed through `/index.php` instead of producing nginx 404 errors.
 
 #### HTTPS and Let's Encrypt Support
 
