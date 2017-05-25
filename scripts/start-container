@@ -1,6 +1,7 @@
 #!/bin/bash
 
 main() {
+    install-extras || exit 1
     setup-environment-vars
     generate-system-configuration
     enable-or-disable-ssl-config
@@ -37,7 +38,6 @@ setup-environment-vars() {
     WEBROOT=${WEBROOT:-${CODE_BASE}${PUBLIC_DIR:+/${PUBLIC_DIR#/}}}
     export WEBROOT=${WEBROOT%/}
 }
-
 
 generate-system-configuration() {
 

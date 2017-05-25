@@ -130,3 +130,5 @@ services:
       - GIT_REPO=https://github.com/moodle/moodle.git
       - GIT_BRANCH=MOODLE_33_STABLE
 ```
+
+For performance's sake, it's generally better to specify extras at build-time, but as a development convenience you can also pass them to the container as environment variables to be installed or built during container startup.  (Which, of course, will be slower as a result.)

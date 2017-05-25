@@ -1,0 +1,28 @@
+#!/bin/bash
+
+uninstalled_apks() {
+    grep -vxF -f <(apk info | sort) <(for apk; do echo $apk; done)
+}
+
+uninstalled_exts() {
+    ext_base="/usr/local/etc/php/conf.d/docker-php-ext-"
+    for ext; do [ -f "${ext_base}${ext}.ini" ]  || echo $ext; done
+}
+
+install_pecls() {
+    docker-php-source extract &&
+    apk add --no-cache --virtual .phpize-deps $PHPIZE_DEPS &&
+    pecl install $pecls &&
+    docker-php-ext-enable $pecls &&
+    apk del .phpize-deps &&
+    docker-php-source delete
+}
+
+apks=$(    uninstalled_apks $EXTRA_APKS)
+installs=$(uninstalled_exts $EXTRA_EXTS)
+pecls=$(   uninstalled_exts $EXTRA_PECL)
+
+[ -z "$apks"     ] || apk add --no-cache $apks         || exit 1
+[ -z "$installs" ] || docker-php-ext-install $installs || exit 1
+[ -z "$pecls"    ] || install_pecls $pecls             || exit 1
+
