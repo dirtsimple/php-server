@@ -34,13 +34,11 @@ else
   # Always chown webroot for better mounting
   chown -Rf nginx.nginx /var/www/html
 fi
-export HOME=~nginx
 
 # Git config
-[[ -z "$GIT_NAME" ]]  || as-nginx git config --global user.name  \"$GIT_NAME\";
-[[ -z "$GIT_EMAIL" ]] || as-nginx git config --global user.email \"$GIT_EMAIL\";
-as-nginx git config --global push.default = simple
-
+[[ -z "$GIT_NAME" ]]  || git config --system user.name  \"$GIT_NAME\";
+[[ -z "$GIT_EMAIL" ]] || git config --system user.email \"$GIT_EMAIL\";
+git config --system push.default = simple
 
 # Dont pull code down if the .git folder exists
 if [ ! -d "/var/www/html/.git" ]; then
