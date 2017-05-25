@@ -16,7 +16,7 @@ ssl_available=/etc/nginx/sites-available/default-ssl.conf
 ssl_enabled=/etc/nginx/sites-enabled/default-ssl.conf
 
 if [ ! -z "$DOMAIN" ] && [ -f /etc/letsencrypt/live/$DOMAIN/privkey.pem ] ; then
-    ln -s $ssl_available $ssl_enabled
+    [[ -L $ssl_enabled ]] || ln -s $ssl_available $ssl_enabled
 elif [ -L $ssl_enabled ] && [ "$(readlink $ssl_enabled)" -ef "$ssl_available" ]; then
     # Delete ssl conf only if it's a symlink we created
     rm $ssl_enabled
