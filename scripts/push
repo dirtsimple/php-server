@@ -1,0 +1,12 @@
+#!/bin/bash
+if [ -z "$GIT_EMAIL" ] || [ -z "$GIT_NAME" ] ; then
+    echo "You need a \$GIT_NAME and \$GIT_EMAIL for git commit to work" >&2
+    exit 1
+fi
+
+cd ${CODE_BASE:-/var/www/html}
+
+git add .
+git commit -a -m "push from container $(date +"%D %T")"
+git push
+
