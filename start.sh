@@ -22,13 +22,6 @@ elif [ -L $ssl_enabled ] && [ "$(readlink $ssl_enabled)" -ef "$ssl_available" ];
     rm $ssl_enabled
 fi
 
-# Setup SSH configuration
-chmod 0700 /root/.ssh
-if [ ! -z "$SSH_KEY" ]; then
- echo "$SSH_KEY" | base64 -d > /root/.ssh/id_rsa
- chmod 600 /root/.ssh/id_rsa
-fi
-
 # Re-create nginx user w/specified UID/GID
 if [ ! -z "$PUID" ]; then
   if [ -z "$PGID" ]; then
@@ -41,6 +34,12 @@ else
   # Always chown webroot for better mounting
   chown -Rf nginx.nginx /var/www/html
 fi
+export HOME=~nginx
+
+# Git config
+[[ -z "$GIT_NAME" ]]  || as-nginx git config --global user.name  \"$GIT_NAME\";
+[[ -z "$GIT_EMAIL" ]] || as-nginx git config --global user.email \"$GIT_EMAIL\";
+as-nginx git config --global push.default = simple
 
 
 # Dont pull code down if the .git folder exists
@@ -67,8 +66,7 @@ if [ ! -d "/var/www/html/.git" ]; then
       GIT_COMMAND=${GIT_COMMAND}" https://${GIT_USERNAME}:${GIT_PERSONAL_TOKEN}@${GIT_REPO}"
     fi
    fi
-   ${GIT_COMMAND} /var/www/html || exit 1
-   chown -Rf nginx.nginx /var/www/html
+   as-nginx ssh-agent ${GIT_COMMAND} /var/www/html || exit 1
  fi
 fi
 
@@ -84,7 +82,7 @@ process-templates-from /var/www/html/conf-tpl
 
 # Try auto install for composer
 if [ -f "/var/www/html/composer.lock" ]; then
-    as-nginx composer install --no-dev --working-dir=/var/www/html || exit 1
+    as-nginx ssh-agent composer install --no-dev --working-dir=/var/www/html || exit 1
 fi
 
 # Run custom scripts

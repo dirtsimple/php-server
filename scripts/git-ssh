@@ -1,0 +1,14 @@
+#!/bin/bash
+
+SSH_OPTIONS=-o StrictHostKeyChecking=no
+
+if [ ! -z "$GIT_USERNAME" ]; then
+    SSH_OPTIONS=$SSH_OPTIONS -o "User=$GIT_USERNAME"
+fi
+
+if [ ! -z "$SSH_KEY" ]; then
+    echo "$SSH_KEY" | base64 -d | ssh-add /dev/stdin
+fi
+
+exec ssh $SSH_OPTIONS "$@"
+
