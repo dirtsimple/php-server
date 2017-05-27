@@ -84,6 +84,7 @@ For backwards compatibility with `ngineered/nginx-php-fpm`, you can include a `c
 In addition, the following environment variables control how the above configuration files behave:
 
 * `PUBLIC_DIR` -- the subdirectory of `CODE_BASE` that should be used as the server's default document root.  If not specified, `CODE_BASE` is used as the default document root.
+* `FORCE_HTTPS` -- boolean: redirect all http requests to https; if `REAL_IP_CLOUDFLARE` is in effect, X-Forwarded-Proto is used to determine whether the request is https
 * `NGINX_IPV6` -- boolean: enables IPV6 in the http and/or https server blocks.  (Otherwise, only IPV4 is used.)
 * `STATIC_EXPIRES` -- expiration time to use for static files; if not set, use nginx defaults
 * `VIRTUALBOX_DEV` -- boolean: disables the `sendfile` option (use this when doing development with Docker Toolbox or boot2docker with a volume synced to OS X or Windows)
@@ -141,6 +142,8 @@ Any files named `/etc/supervisor.d/*.ini` are included as part of the supervisor
 * `php-fpm.ini`
 * `certbot.ini` -- run registration or renewal if `LETS_ENCRYPT` and `DOMAIN` are set
 * `cron.ini` -- run crond if `USE_CRON=true`
+
+You can override any of these with an empty file to disable the relevant functionality.
 
 If you want to add cron jobs, you have two options:
 
