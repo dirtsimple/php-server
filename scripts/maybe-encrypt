@@ -2,9 +2,14 @@
 
 if [ ! -f /etc/letsencrypt/live/$DOMAIN/privkey.pem ] ; then
     mode=setup
+    rm /etc/nginx/sites-enabled/default-ssl.conf || true
 else
     mode=renew
 fi
 
 GIT_EMAIL="$LETS_ENCRYPT" /usr/bin/letsencrypt-$mode
 
+# Force template rebuild if we just added the cert
+if [[ "$mode" == "setup" ]]; then
+    supervisorctl shutdown
+fi
