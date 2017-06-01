@@ -38,14 +38,15 @@ setup-environment-vars() {
     export WEBROOT=${WEBROOT%/}
 }
 
+
 generate-system-configuration() {
 
     process-templates-from /tpl
 
     # Git config
-    [[ -z "$GIT_NAME" ]]  || git config --system user.name  \"$GIT_NAME\";
-    [[ -z "$GIT_EMAIL" ]] || git config --system user.email \"$GIT_EMAIL\";
-    git config --system push.default = simple
+    [[ -z "$GIT_NAME" ]]  || git config --system user.name  "$GIT_NAME";
+    [[ -z "$GIT_EMAIL" ]] || git config --system user.email "$GIT_EMAIL";
+    git config --system push.default simple
 
 }
 
