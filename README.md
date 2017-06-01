@@ -62,7 +62,7 @@ The path of an output configuration file is derived from its relative path.  So,
 
 Templates found in `/tpl` are applied at the very beginning of container startup, before code is cloned or startup scripts are run.  Templates in `conf-tpl/` are applied just after the code checkout (if any), and just before `composer install` (if applicable).
 
-Template files are just plain text, except that they can contain Go template code like `{{getenv "DOMAIN"}}` to insert environment variables.  Please see the [gomplate](https://github.com/hairyhenderson/gomplate) documentation and [Go Text Template](https://golang.org/pkg/text/template/#hdr-Text_and_spaces) language reference for more details, and this project's  [`tpl`](https://github.com/dirtsimple/php-server/tree/master/tpl) subdirectory for examples.
+Template files are just plain text, except that they can contain Go template code like `{{getenv "DOMAIN"}}` to insert environment variables.  Please see the [gomplate documentation](https://github.com/hairyhenderson/gomplate/tree/master/docs/content) and [Go Text Template](https://golang.org/pkg/text/template/#hdr-Text_and_spaces) language reference for more details, and this project's  [`tpl`](https://github.com/dirtsimple/php-server/tree/master/tpl) subdirectory for examples.
 
 ### Nginx Configuration
 
