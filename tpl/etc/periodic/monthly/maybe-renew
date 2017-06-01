@@ -1,5 +1,5 @@
 #!/bin/sh
-{{if getenv "DOMAIN"}}{{if getenv "LETSENCRYPT" -}}
+{{if .Env.DOMAIN}}{{if .Env.LETSENCRYPT -}}
 supervisorctl start certbot
 {{- end}}{{end}}
 

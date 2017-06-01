@@ -54,11 +54,14 @@ generate-system-configuration() {
 # Configuration templates
 
 process-templates-from() {
-    if [ -d "$1" ]; then
+    local src=$1
+    if [[ -d "$src" ]]; then
         # Setup configuration files based on environment
-        gomplate --input-dir "$1" --output-dir / || exit 1
-        # Make executable inputs into executable outputs
-        for f in $(find "$1" -type f -perm -111); do chmod +x "${f#$1}"; done
+        for f in $(find "$src" -type f); do
+            local dn=$(dirname ${f#$src})
+            [[ -d "$dn" ]] || mkdir -p "$dn" || exit 1
+            dockerize -template "$f:${f#$src}" || exit 1
+        done
     fi
 }
 
@@ -99,7 +102,7 @@ perform-git-checkout() {
     # Pull down code from git for our site!
     if [ ! -z "$GIT_REPO" ]; then
         # Remove the test index file if you are pulling in a git repo
-        if ! bool "${REMOVE_FILES-true}"; then
+        if ! isTrue "${REMOVE_FILES-true}"; then
             echo "skipping removal of files"
         else
             rm -Rf $CODE_BASE/*
@@ -111,7 +114,7 @@ perform-git-checkout() {
         if [ -z "$GIT_USERNAME" ] && [ -z "$GIT_PERSONAL_TOKEN" ]; then
             GIT_COMMAND=${GIT_COMMAND}" ${GIT_REPO}"
         else
-            if bool "$GIT_USE_SSH"; then
+            if isTrue "$GIT_USE_SSH"; then
                 GIT_COMMAND=${GIT_COMMAND}" ${GIT_REPO}"
             else
                 GIT_COMMAND=${GIT_COMMAND}" https://${GIT_USERNAME}:${GIT_PERSONAL_TOKEN}@${GIT_REPO}"
@@ -145,7 +148,7 @@ run-composer-install() {
 # Run custom scripts
 
 run-user-scripts() {
-    if bool "$RUN_SCRIPTS" ; then
+    if isTrue "$RUN_SCRIPTS" ; then
         # make scripts executable incase they aren't
         chmod -Rf 750 $CODE_BASE/scripts/*
         # run scripts in number order

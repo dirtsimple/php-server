@@ -11,8 +11,8 @@ This is a docker image for an alpine nginx + php-fpm combo container, with suppo
 
 Inspired by (and implemented as a backward-compatible wrapper over) [ngineered/nginx-php-fpm](https://github.com/ngineered/nginx-php-fpm), this image supports all of that image's [configuration flags](https://github.com/ngineered/nginx-php-fpm/blob/master/docs/config_flags.md), plus the following enhancements and bug fixes:
 
-* Configuration files are generated using [gomplate](https://github.com/hairyhenderson/gomplate) templates instead of `sed`, and boolean environment variables can be set to `true` or `false` , not just `1` or `0`
-* Your code can provide a `conf-tpl` directory with additional configuration files to be processed w/gomplate at container start time (or you can mount replacements for this image's configuration templates under `/tpl`)
+* Configuration files are generated using [dockerize templates](https://github.com/jwilder/dockerize#using-templates) instead of `sed`, and boolean environment variables can be set to `true` or `false` , not just `1` or `0`
+* Your code can provide a `conf-tpl` directory with additional configuration files to be processed w/dockerize at container start time (or you can mount replacements for this image's configuration templates under `/tpl`)
 * Ready-to-use support for most PHP "front controllers" (as used by Wordpress, Laravel, Drupal, Symfony, etc.): just set `PHP_CONTROLLER` to `true` and `PUBLIC_DIR` to the subdirectory that contains the relevant `index.php` (if any).  (`PATH_INFO` support is also available, for e.g. Moodle.)
 * HTTPS is as simple as setting a `DOMAIN` and `LETS_ENCRYPT=my@email`: registration and renewals are immediate, painless, and 100% automatic.  The certs are saved in a volume by default, and renewals happen on container restart, as well as monthly if you enable cron.
 * cron jobs are supported by setting `USE_CRON=true` and putting the job data in `/etc/crontabs/nginx`, or an executable file in one of the `/etc/periodic/` subdirectories (via volume mount, startup script, `conf-tpl` or `/tpl` files)
@@ -53,7 +53,7 @@ For compatibility with ngineered/nginx-php-fpm, there is also a `push` command t
 
 ### Configuration Templating
 
-This image uses [gomplate](https://github.com/hairyhenderson/gomplate) to generate arbitrary configuration files from templates.  Templates are loaded from two locations:
+This image uses [dockerize templates](https://github.com/jwilder/dockerize#using-templates) to generate arbitrary configuration files from templates.  Templates are loaded from two locations:
 
 * The `/tpl` directory (created at build-time and supplied by this image)
 * The `$CODE_BASE/conf-tpl` directory, found in your code checkout, volume mount, or derived image
@@ -62,7 +62,7 @@ The path of an output configuration file is derived from its relative path.  So,
 
 Templates found in `/tpl` are applied at the very beginning of container startup, before code is cloned or startup scripts are run.  Templates in `conf-tpl/` are applied just after the code checkout (if any), and just before `composer install` (if applicable).
 
-Template files are just plain text, except that they can contain Go template code like `{{getenv "DOMAIN"}}` to insert environment variables.  Please see the [gomplate documentation](https://github.com/hairyhenderson/gomplate/tree/master/docs/content) and [Go Text Template](https://golang.org/pkg/text/template/#hdr-Text_and_spaces) language reference for more details, and this project's  [`tpl`](https://github.com/dirtsimple/php-server/tree/master/tpl) subdirectory for examples.
+Template files are just plain text, except that they can contain Go template code like `{{.Env.DOMAIN}}` to insert environment variables.  Please see the [dockerize documentation](https://github.com/jwilder/dockerize#using-templates) and [Go Text Template](https://golang.org/pkg/text/template/#hdr-Text_and_spaces) language reference for more details, and this project's  [`tpl`](https://github.com/dirtsimple/php-server/tree/master/tpl) subdirectory for examples.
 
 ### Nginx Configuration
 
