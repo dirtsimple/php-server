@@ -18,7 +18,7 @@ install_pecls() {
     docker-php-source delete
 }
 
-apks=$(    uninstalled_apks $EXTRA_APKS)
+apks=$(    uninstalled_apks tzdata $EXTRA_APKS)
 installs=$(uninstalled_exts $EXTRA_EXTS)
 pecls=$(   uninstalled_exts $EXTRA_PECL)
 
