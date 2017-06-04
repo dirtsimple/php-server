@@ -13,7 +13,7 @@ main() {
     apply-nginx-permissions
     generate-user-configuration
 
-    if composer.json-exists; then
+    if composer.lock-exists; then
         run-composer-install
     fi
 
@@ -23,7 +23,7 @@ main() {
 
 
 checkout-exists()      { [ -d "$CODE_BASE/.git" ]; }
-composer.json-exists() { [ -f "$CODE_BASE/composer.json" ]; }
+composer.lock-exists() { [ -f "$CODE_BASE/composer.lock" ]; }
 glob-list()            ( shopt -s nullglob; echo $1; )
 
 setup-environment-vars() {
