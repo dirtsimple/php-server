@@ -1,5 +1,7 @@
 # dirtsimple/php-server
 
+### Overview
+
 This is a docker image for an alpine nginx + php-fpm combo container, with support for:
 
 * Cloning a git repo at container start (and running `composer install` if applicable)
@@ -12,11 +14,11 @@ This is a docker image for an alpine nginx + php-fpm combo container, with suppo
 Inspired by (and implemented as a backward-compatible wrapper over) [ngineered/nginx-php-fpm](https://github.com/ngineered/nginx-php-fpm), this image supports all of that image's [configuration flags](https://github.com/ngineered/nginx-php-fpm/blob/master/docs/config_flags.md), plus the following enhancements and bug fixes:
 
 * Configuration files are generated using [dockerize templates](https://github.com/jwilder/dockerize#using-templates) instead of `sed`, and boolean environment variables can be set to `true` or `false` , not just `1` or `0`
-* Your code can provide a `conf-tpl` directory with additional configuration files to be processed w/dockerize at container start time (or you can mount replacements for this image's configuration templates under `/tpl`)
+* Your code can provide additional configuration files to be processed w/dockerize at container start time (or you can mount replacements for this image's configuration templates under `/tpl`)
 * Ready-to-use support for most PHP "front controllers" (as used by Wordpress, Laravel, Drupal, Symfony, etc.): just set `PHP_CONTROLLER` to `true` and `PUBLIC_DIR` to the subdirectory that contains the relevant `index.php` (if any).  (`PATH_INFO` support is also available, for e.g. Moodle.)
 * HTTPS is as simple as setting a `DOMAIN` and `LETS_ENCRYPT=my@email`: registration and renewals are immediate, painless, and 100% automatic.  The certs are saved in a volume by default, and renewals happen on container restart, as well as monthly if you enable cron.
-* cron jobs are supported by setting `USE_CRON=true` and putting the job data in `/etc/crontabs/nginx`, or an executable file in one of the `/etc/periodic/` subdirectories (via volume mount, startup script, `conf-tpl` or `/tpl` files)
-* You can add `.ini` files in `/etc/supervisor.d` to add additional processes to the base supervisor configuration, or to override default configurations for nginx, php-fpm, etc.
+* cron jobs are supported by setting `USE_CRON=true` and putting the job data in `/etc/crontabs/nginx`, or an executable file in one of the `/etc/periodic/` subdirectories (via volume mount, startup script, or template files)
+* You can add `.ini` files to `/etc/supervisor.d/` to add additional processes to the base supervisor configuration, or to override the default supervisor configurations for nginx, php-fpm, etc.
 * `php-fpm` pool parameters can be set with environment vars (`FPM_PM`, `FPM_MAX_CHILDREN`, `FPM_START_SERVERS`, `FPM_MIN_SPARE_SERVERS`, `FPM_MAX_SPARE_SERVERS`, `FPM_MAX_REQUESTS`)
 * nginx's `set_real_ip_from` is recursive, and supports Cloudflare (via `REAL_IP_CLOUDFLARE=true`) as well as your own load balancers/proxies (via `REAL_IP_FROM`)
 * Additional alpine APKs, PHP core extensions, and pecl extensions can be installed using the `EXTRA_APKS`, `EXTRA_EXTS`, and `EXTRA_PECL` build-time arguments, respectively.
@@ -24,6 +26,7 @@ Inspired by (and implemented as a backward-compatible wrapper over) [ngineered/n
 * `sendfile` is turned on for optimal static file performance, unless you set `VIRTUALBOX_DEV=true`
 * Configuration files don't grow on each container restart
 * nginx and composer are run as the nginx/`PUID` user, not root (and there's a handy `as-nginx` script for running other things that way)
+* You can explicitly control what directories can be read or written to by the webserver and PHP using the `NGINX_READABLE` and `NGINX_WRITABLE` lists
 * You can mount your code anywhere, not just `/var/www/html` (just set `CODE_BASE` wherever you like)
 
 ### Adding Your Code
@@ -32,13 +35,13 @@ This image assumes your primary application code will be found in the directory 
 
 If a `GIT_REPO` is specified, the given repository will be cloned to the `CODE_BASE` directory at container startup, unless a `.git` subdirectory is already present  (e.g. in the case of a restart, or a mounted checkout).  If `GIT_BRANCH` is set, the specified branch will be used.  You can also supply a base64-encoded `SSH_KEY` to access protected repositories (including any checkouts done by `compsoer`).
 
-(Important: do *not* both mount your code as a volume *and* provide a `GIT_REPO`: your code will be **erased** unless it's a git checkout, or you set `REMOVE_FILES=false` in your environment.)
+(Important: do *not* both mount your code as a volume *and* provide a `GIT_REPO`: your code will be **erased** unless it's already a git checkout, or you set `REMOVE_FILES=false` in your environment.)
 
 Whether you're using a `GIT_REPO` or not, this image checks for the following things in the `CODE_BASE` directory during startup:
 
 * a `composer.json` file (triggering an automatic `composer install` run if found)
-* a `conf-tpl/` subdirectory (triggering configuration file updates from any supplied templates; see "Configuration Templating" below for details)
-* a `scripts/` subdirectory (containing startup scripts that will be run as root in alphanumeric order, if the `RUN_SCRIPTS` variable is set to `1` or `true`)
+* Any configuration template directories specified in `DOCKERIZE_TEMPLATES` (see "Configuration Templating" below for details)
+* A startup scripts directory (specified by `RUN_SCRIPTS`) containing scripts that will be **run as root** in glob-sorted order during container startup, just before `supervisord` is launched.  (The directory name defaults to `scripts` if `RUN_SCRIPTS` is set to `1`,  `true`, `TRUE`, `T`, or `t`.)  These scripts **must not** be writable by the nginx user; the container will refuse to start if any of them are.
 
 Note: if you are using a framework that exposes a subdirectory (like `web` or `public`) as the actual directory to be served by nginx, you must set the `PUBLIC_DIR` environment variable to that subdirectory (e.g. `public`).  (Assuming you don't override the default web server configuration; see more below.)
 
@@ -53,22 +56,29 @@ For compatibility with ngineered/nginx-php-fpm, there is also a `push` command t
 
 ### Configuration Templating
 
-This image uses [dockerize templates](https://github.com/jwilder/dockerize#using-templates) to generate arbitrary configuration files from templates.  Templates are loaded from two locations:
+This image uses [dockerize templates](https://github.com/jwilder/dockerize#using-templates) to generate arbitrary configuration files from templates.  Templates are loaded first from the image's  bundled`/tpl` directory, and then from the subdirectories of  `CODE_BASE` identified by the `DOCKERIZE_TEMPLATES` environment variable.
 
-* The `/tpl` directory (created at build-time and supplied by this image)
-* The `$CODE_BASE/conf-tpl` directory, found in your code checkout, volume mount, or derived image
+If used, `DOCKERIZE_TEMPLATES` should be a space-separated series of `source:destination` directory name pairs.  For example, if it were set to this:
 
-The path of an output configuration file is derived from its relative path.  So, for example, the default template for `/etc/supervisord.conf` can be found in `/tpl/etc/supervisord.conf`, and can be overrridden by a template in `$CODE_BASE/conf-tpl/etc/supervisord.conf`.
+````
+.tpl:/ .nginx:/etc/nginx .supervisor:/etc/supervisor.d .periodic:/etc/periodic
+````
 
-Templates found in `/tpl` are applied at the very beginning of container startup, before code is cloned or startup scripts are run.  Templates in `conf-tpl/` are applied just after the code checkout (if any), and just before `composer install` (if applicable).
+it would mean that your project could contain a `.tpl` directory, whose contents would be recursively expanded to the root directory,  an `.nginx` subdirectory expanded into `/etc/nginx`, and so on.  Source and destination can both be absolute or relative; relative paths are interpreted relative to `CODE_BASE`.
+
+The path of an output configuration file is derived from its relative path.  So, for example, the default template for `/etc/supervisord.conf` can be found in `/tpl/etc/supervisord.conf`, and with the above `DOCKERIZE_TEMPLATES` setting it could be overrridden by a template in `$CODE_BASE/.tpl/etc/supervisord.conf`.
+
+Templates found in the image-supplied `/tpl` are applied at the very beginning of container startup, before code is cloned or startup scripts are run.  Templates in `DOCKERIZE_TEMPLATES` directories are applied just after the code checkout (if any), and just before `composer install` (if applicable).
 
 Template files are just plain text, except that they can contain Go template code like `{{.Env.DOMAIN}}` to insert environment variables.  Please see the [dockerize documentation](https://github.com/jwilder/dockerize#using-templates) and [Go Text Template](https://golang.org/pkg/text/template/#hdr-Text_and_spaces) language reference for more details, and this project's  [`tpl`](https://github.com/dirtsimple/php-server/tree/master/tpl) subdirectory for examples.
+
+(Note: for improved security, template files are not processed if they are writable by the `nginx` user.  If even *one* template file is writable by the web server or php-fpm, the container will refuse to start.)
 
 ### Nginx Configuration
 
 #### Config Files
 
-This image generates and uses the following configuration files in `/etc/nginx`, any or all of which can be replaced using template files under your code's `conf-tpl/etc/nginx` subdirectory:
+This image generates and uses the following configuration files in `/etc/nginx`, any or all of which can be replaced using mounts or template files:
 
 * `app.conf` -- the main app configuration for running PHP and serving files under the document root.  In general, if you need to change your nginx configuration, this is the first place to look.  Its contents are included *inside* of the `server {}` blocks for both the http and https servers, so they can both be configured from one file.
 * `http.conf` -- extra configuration for the `http {}` block, empty by default.  (Use this to define maps, caches, additional servers, etc.)
@@ -77,7 +87,7 @@ This image generates and uses the following configuration files in `/etc/nginx`,
 * `sites-available/default-ssl.conf` -- the default `server` block for the HTTPS protocol; includes `app.conf` to specify locations and server-level settings other than the listening port/protocol/certs.  (This file is symlinked into `sites-enabled` by default, but does nothing unless `$DOMAIN` is set and a private key is available in `/etc/letsencrypt/live/$DOMAIN`.)
 * `cloudflare.conf` -- the settings needed for correct IP detection/logging when serving via cloudflare; this file is automatically included by `nginx.conf` if `REAL_IP_CLOUDFLARE`is set to `1`.
 
-For backwards compatibility with `ngineered/nginx-php-fpm`, you can include a `conf/nginx/nginx-site.conf` and/or `conf/nginx/nginx-site-ssl.conf` in your `CODE_BASE` directory.  Doing this will, however, disable any features of `app.conf` that you don't copy into them.  It's recommended that you use `conf-tpl/etc/nginx/app.conf` instead, going forward.
+For backwards compatibility with `ngineered/nginx-php-fpm`, you can include a `conf/nginx/nginx-site.conf` and/or `conf/nginx/nginx-site-ssl.conf` in your `CODE_BASE` directory.  Doing this will, however, disable any features of `app.conf` that you don't copy into them.  It's recommended that you use `.nginx/app.conf` instead, going forward.
 
 #### Environment
 
@@ -89,12 +99,13 @@ In addition, the following environment variables control how the above configura
 * `STATIC_EXPIRES` -- expiration time to use for static files; if not set, use nginx defaults
 * `VIRTUALBOX_DEV` -- boolean: disables the `sendfile` option (use this when doing development with Docker Toolbox or boot2docker with a volume synced to OS X or Windows)
 
-If you haven't created your own `nginx-site.conf` and/or `nginx-site-ssl.conf` files, and want absolute 100% backward compatibility with the default settings of `ngineered/nginx-php-fpm`, you can use the following settings:
+If you want extreme backward compatibility with the default settings of `ngineered/nginx-php-fpm`, you can use the following settings:
 
 * `NGD_404=true` (use the ngineered-branded 404 handler from `ngineered/nginx-php-fpm` instead of nginx's default 404 handling)
 * `NGINX_IPV6=true`
 * `STATIC_EXPIRES=5d`
 * `VIRTUALBOX_DEV=true` (not really needed unless you're actually using virtualbox)
+* `NGINX_READABLE=.` and `NGINX_WRITABLE=.`, to make the entire codebase readable and writable by nginx+php
 
 #### PHP Front Controllers and `PATH_INFO`
 
@@ -103,6 +114,12 @@ Many PHP frameworks use a central entry point like `index.php` to process all dy
 For example, if you are deploying a Laravel application, you need to set `PUBLIC_DIR` to `public`, and `PHP_CONTROLLER` to `true`.  Then, any URLs that don't resolve to static files in `public` will be routed through `/index.php` instead of producing nginx 404 errors.
 
 By default, `PATH_INFO` is disabled, meaning that you cannot add trailing paths after .php files.  If you need this (e.g. for Moodle), you can set `USE_PATH_INFO` to `true`, and then you can access urls like `/some/file.php/other/stuff`.  As long as `/some/file.php` exists, then it will be run with `$_SERVER['PATH_INFO']` set to `/other/stuff`.  If you also enable `PHP_CONTROLLER`, then the default `PHP_CONTROLLER` will be `/index.php$uri?$args`, so that the front controller gets `PATH_INFO` set as well.  (You can override this by explicitly setting `PHP_CONTROLLER` to the exact expression desired.)
+
+#### File Permissions
+
+For security, you must specifically make files readable or writable by nginx and php, using the `NGINX_READABLE` and `NGINX_WRITABLE` variables.  Each is a space-separated lists of files or directories which will be recursively `chgrp`'d to nginx and made group-readable or group-writable, respectively.  Paths are interpreted relative to `CODE_BASE`, and the default `NGINX_READABLE` is `.`, meaning the entire code base is readable by default.  If you are using a web framework that writes to the code base, you must add the affected directories and/or files to `NGINX_WRITABLE`.
+
+Note: file permissions are applied prior to processing template files and running startup scripts, so if you make your entire codebase writable you will not be able to use configuration templates or startup scripts.  You will need to explicitly list subdirectories of your code that do not include your templates or startup scripts, to preserve separation of privileges within the container.
 
 #### HTTPS and Let's Encrypt Support
 
@@ -138,7 +155,7 @@ For performance's sake, it's generally better to specify extras at build-time, b
 
 ### Cron and Other Supervised Tasks
 
-Any files named `/etc/supervisor.d/*.ini` are included as part of the supervisord configuration, so that you can add your own supervised tasks.  (For example, if you wanted to add a mysql or openssh server.)  This image's own tasks are there as well, and can be overridden by your own substitutions in `/tpl` and/or `$CODE_BASE/conf-tpl` subdirectories:
+Any files named `/etc/supervisor.d/*.ini` are included as part of the supervisord configuration, so that you can add your own supervised tasks.  (For example, if you wanted to add a mysql or openssh server.)  This image's own tasks are there as well, and can be overridden by your own substitutions in `/tpl/etc/supervisor.d` or a `DOCKERIZE_TEMPLATES` directory:
 
 * `nginx.ini`
 * `php-fpm.ini`
@@ -150,8 +167,8 @@ You can override any of these with an empty file to disable the relevant functio
 If you want to add cron jobs, you have two options:
 
 * Generate a `/etc/crontabs/nginx` crontab file
-* Add scripts to a subdirectory of `/etc/periodic`, either `15min`, `hourly`, `daily`, `weekly`, or `monthly`
+* Add scripts to a subdirectory of `/etc/periodic`.  Scripts must be in a subdirectory named `15min`, `hourly`, `daily`, `weekly`, or `monthly`  (e.g.  a script placed in `/etc/periodic/daily` would be run daily)
 
-Cron jobs listed in `/etc/crontabs/nginx` will run as the `nginx` user; scripts in `/etc/periodic/` dirs run as root.  You can preface commands with `as-nginx` to run them as the nginx user.  (Note: the templates for scripts to be placed in `/etc/periodic` *must* have their executable bit set in order to run.)
+Cron jobs listed in the  `/etc/crontabs/nginx` file will run as the `nginx` user; scripts in `/etc/periodic/` dirs run as root.  You can preface commands in those scripts with `as-nginx` to run them as the nginx user.  (Note: the templates for scripts to be placed in `/etc/periodic` *must* have their executable bit set in order to run!)
 
-As always, these configuration files can be generated by mounting templates in `/tpl` or including a `conf-tpl/` directory in the root of your codebase.
+As always, these configuration files can be generated by mounting templates in `/tpl` or via a `DOCKERIZE_TEMPLATES ` directory inside your codebase.

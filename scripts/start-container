@@ -3,64 +3,79 @@
 main() {
     install-extras || exit 1
     setup-environment-vars
-    generate-system-configuration
     setup-nginx-user
+    generate-system-configuration
 
     if ! checkout-exists; then
         perform-git-checkout
     fi
 
+    apply-nginx-permissions
     generate-user-configuration
 
     if composer.json-exists; then
         run-composer-install
     fi
 
-    if user-scripts-exist; then
-        run-user-scripts
-    fi
-
+    run-user-scripts
     exec-supervisord
 }
 
 
 checkout-exists()      { [ -d "$CODE_BASE/.git" ]; }
 composer.json-exists() { [ -f "$CODE_BASE/composer.json" ]; }
-user-scripts-exist()   { [ -d "$CODE_BASE/scripts/" ]; }
+glob-list()            ( shopt -s nullglob; echo $1; )
 
 setup-environment-vars() {
-    # Set up CODE_BASE and WEBROOT
+    # Set up CODE_BASE, PUBLIC_DIR, and WEBROOT
 
     CODE_BASE=${CODE_BASE:-/var/www/html}
-    export CODE_BASE=${CODE_BASE%/}
+    export CODE_BASE="$(realpath $CODE_BASE)" || exit 1  # must exist!
 
-    WEBROOT=${WEBROOT:-${CODE_BASE}${PUBLIC_DIR:+/${PUBLIC_DIR#/}}}
-    export WEBROOT=${WEBROOT%/}
+    cd "$CODE_BASE"
+
+    export PUBLIC_DIR="$(realpath ${PUBLIC_DIR-.})" || exit 1 # must exist!
+    export WEBROOT="${WEBROOT-${PUBLIC_DIR}}"
 }
 
 
 generate-system-configuration() {
-
-    process-templates-from /tpl
+    expand-templates /tpl /
 
     # Git config
     [[ -z "$GIT_NAME" ]]  || git config --system user.name  "$GIT_NAME";
     [[ -z "$GIT_EMAIL" ]] || git config --system user.email "$GIT_EMAIL";
     git config --system push.default simple
-
 }
 
+ensure-dir() {
+    [[ -d "$1" ]] || mkdir -p "$1" || exit 1
+}
 
-# Configuration templates
+expand-template() {
+    # Expand precisely one template file to a target filename
+    reject-nginx-writable "$1"
+    ensure-dir "$(dirname "$2")"
+    dockerize -template "$1:$2" || exit 1
+}
 
-process-templates-from() {
-    local src=$1
+reject-nginx-writable() {
+    dv=($(stat -Lc "%U %G %A" "$1")) && (
+        [[ "${dv[0]}" == "nginx" ]] || [[ "${dv[2]:8:1}" == "w" ]] ||
+        ( [[ "${dv[2]:5:1}" == "w" ]] && [[ "${NGINX_GROUPS[*]}" =~ ^(.* |)${dv[1]}( .*|)$ ]] )
+    ) && echo >&2 "${2-Template} file $1 must not be writable by nginx" && exit 1
+}
+
+expand-templates() {
+    # Setup configuration files based on environment
+    local src="$1" dst="${2-/}"
+    cd "$CODE_BASE"     # process everything relative to CODE_BASE
     if [[ -d "$src" ]]; then
-        # Setup configuration files based on environment
+        # Source directory exists: expand subtree under destination dir
+        ensure-dir "$dst"
+        src="$(realpath "$src")" dst="$(realpath "$dst")"
         for f in $(find "$src" -type f); do
-            local dn=$(dirname ${f#$src})
-            [[ -d "$dn" ]] || mkdir -p "$dn" || exit 1
-            dockerize -template "$f:${f#$src}" || exit 1
+            expand-template "$f" "${dst%/}${f#$src}"
         done
     fi
 }
@@ -68,17 +83,17 @@ process-templates-from() {
 setup-nginx-user() {
     # Re-create nginx user w/specified UID/GID
     if [ ! -z "$PUID" ]; then
-        if [ -z "$PGID" ]; then
-            PGID=${PUID}
-        fi
+        if [ -z "$PGID" ]; then PGID=${PUID}; fi
         deluser nginx
         addgroup -g ${PGID} nginx
         adduser -D -S -h /var/cache/nginx -s /sbin/nologin -G nginx -u ${PUID} nginx
-    else
-        # Always chown webroot for better mounting
-        chown -Rf nginx.nginx $CODE_BASE
     fi
+    NGINX_GROUPS=($(groups nginx))
 }
+
+grant-nginx() { [[ -z "$3" ]] || ( ch$1 -Rf nginx $3 && chmod -Rf $2 $3 ) || exit 1 ; }
+
+apply-nginx-permissions() { grant-nginx grp g+r "${NGINX_READABLE-.}" && grant-nginx grp g+w "$NGINX_WRITABLE" ; }
 
 perform-git-checkout() {
     # Pull down code from git for our site!
@@ -107,7 +122,6 @@ perform-git-checkout() {
 }
 
 generate-user-configuration() {
-
     # Enable custom nginx config files if they exist
     for tag in "" "-ssl"; do
         if [ -f $CODE_BASE/conf/nginx/nginx-site$tag.conf ]; then
@@ -115,9 +129,11 @@ generate-user-configuration() {
         fi
     done
 
-    # Install env-templated files if they exist
-    process-templates-from $CODE_BASE/conf-tpl
-
+    # Install env-templated files if they exist - paths are relative to $CODE_BASE
+    for tpl in ${DOCKERIZE_TEMPLATES}; do
+        # deliberately leaving off quotes here to split on `:`
+        expand-templates ${tpl/:/ }
+    done
 }
 
 
@@ -126,24 +142,23 @@ run-composer-install() {
     as-nginx composer install --no-dev --working-dir=$CODE_BASE || exit 1
 }
 
-
-# Run custom scripts
-
 run-user-scripts() {
-    if isTrue "$RUN_SCRIPTS" ; then
-        # make scripts executable incase they aren't
-        chmod -Rf 750 $CODE_BASE/scripts/*
+    if isTrue "$RUN_SCRIPTS"; then
+        RUN_SCRIPTS="$CODE_BASE/scripts";
+    fi
+    if [[ ! -z "$RUN_SCRIPTS" ]] && [[ -d "$RUN_SCRIPTS" ]]; then
         # run scripts in number order
-        for i in $CODE_BASE/scripts/*; do $CODE_BASE/scripts/$i ; done
+        for i in $(glob-list "$RUN_SCRIPTS/*"); do
+            reject-nginx-writable "$i"
+            chmod ug+x "$i" && "$i" || exit 1
+        done
     fi
 }
-
 
 exec-supervisord() {
     # Start supervisord and services
     exec /usr/bin/supervisord -n -c /etc/supervisord.conf
 }
-
 
 main
 
