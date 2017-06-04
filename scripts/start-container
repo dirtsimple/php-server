@@ -117,7 +117,7 @@ perform-git-checkout() {
                 GIT_COMMAND=${GIT_COMMAND}" https://${GIT_USERNAME}:${GIT_PERSONAL_TOKEN}@${GIT_REPO}"
             fi
         fi
-        as-nginx ${GIT_COMMAND} || exit 1
+        as-developer ${GIT_COMMAND} || exit 1
     fi
 }
 
@@ -139,7 +139,7 @@ generate-user-configuration() {
 
 run-composer-install() {
     # Try auto install for composer
-    as-nginx composer install --no-dev --working-dir=$CODE_BASE || exit 1
+    as-developer composer install --no-dev --working-dir=$CODE_BASE || exit 1
 }
 
 run-user-scripts() {

@@ -22,12 +22,10 @@ Inspired by (and implemented as a backward-compatible wrapper over) [ngineered/n
 * `php-fpm` pool parameters can be set with environment vars (`FPM_PM`, `FPM_MAX_CHILDREN`, `FPM_START_SERVERS`, `FPM_MIN_SPARE_SERVERS`, `FPM_MAX_SPARE_SERVERS`, `FPM_MAX_REQUESTS`)
 * nginx's `set_real_ip_from` is recursive, and supports Cloudflare (via `REAL_IP_CLOUDFLARE=true`) as well as your own load balancers/proxies (via `REAL_IP_FROM`)
 * Additional alpine APKs, PHP core extensions, and pecl extensions can be installed using the `EXTRA_APKS`, `EXTRA_EXTS`, and `EXTRA_PECL` build-time arguments, respectively.
-* composer-installed files are properly chowned, and cloned files are chowned to the correct `PUID`/`PGID` instead of the default `nginx` uid/gid
 * `sendfile` is turned on for optimal static file performance, unless you set `VIRTUALBOX_DEV=true`
 * Configuration files don't grow on each container restart
-* nginx and composer are run as the nginx/`PUID` user, not root (and there's a handy `as-nginx` script for running other things that way)
-* You can explicitly control what directories can be read or written to by the webserver and PHP using the `NGINX_READABLE` and `NGINX_WRITABLE` lists
-* You can mount your code anywhere, not just `/var/www/html` (just set `CODE_BASE` wherever you like)
+* Developer and server priviliges are kept separate: git and composer are run as a `developer` user rather than as root, and files are owned by that user.  To be written to by PHP and the web server, files or directories must be explicitly listed in `NGINX_WRITABLE`.  The whole codebase is `NGINX_READABLE` by default, but can be made more restrictive by listing specific directories.
+* You can mount your code anywhere, not just `/var/www/html` (just set `CODE_BASE` to whatever directory you like)
 
 ### Adding Your Code
 
@@ -39,7 +37,7 @@ If a `GIT_REPO` is specified, the given repository will be cloned to the `CODE_B
 
 Whether you're using a `GIT_REPO` or not, this image checks for the following things in the `CODE_BASE` directory during startup:
 
-* a `composer.json` file (triggering an automatic `composer install` run if found)
+* a `composer.lock` file (triggering an automatic `composer install` run if found)
 * Any configuration template directories specified in `DOCKERIZE_TEMPLATES` (see "Configuration Templating" below for details)
 * A startup scripts directory (specified by `RUN_SCRIPTS`) containing scripts that will be **run as root** in glob-sorted order during container startup, just before `supervisord` is launched.  (The directory name defaults to `scripts` if `RUN_SCRIPTS` is set to `1`,  `true`, `TRUE`, `T`, or `t`.)  These scripts **must not** be writable by the nginx user; the container will refuse to start if any of them are.
 
@@ -52,6 +50,12 @@ You can pull updates from `GIT_REPO` to `CODE_BASE` by running the `pull` comman
 (Note that you must set `GIT_NAME` to a commiter name, and `GIT_EMAIL` to a committer email, in order for pull operations to work correctly.)
 
 For compatibility with ngineered/nginx-php-fpm, there is also a `push` command that adds all non-gitignored files, commits them with a generic message, and pushes them to the origin.  (You're probably better off looking at the script as a guide to implementing your own, unless those are your exact requirements.)
+
+#### Permissions and the `developer` User
+
+If you use any of the `git` or `composer` features of this image, they will be run using a special `developer` user that's created on-demand.  This user is created inside the container, but you can set `DEVELOPER_UID` and/or `DEVELOPER_GID` so that the created user will have the right permissions to access or update files mounted from outside the container.  Once the user is created, ownership of the `CODE_BASE` root directory is changed to `developer`.  (Any existing contents retain their existing ownership and permissions.)
+
+If you need to run tasks inside the container as the developer user, you can use the `as-developer` script, e.g. `as-developer composer install`.  (The `push` and `pull` commands and the container start script already use `as-developer` internally to run git and composer.)
 
 
 ### Configuration Templating
@@ -169,6 +173,6 @@ If you want to add cron jobs, you have two options:
 * Generate a `/etc/crontabs/nginx` crontab file
 * Add scripts to a subdirectory of `/etc/periodic`.  Scripts must be in a subdirectory named `15min`, `hourly`, `daily`, `weekly`, or `monthly`  (e.g.  a script placed in `/etc/periodic/daily` would be run daily)
 
-Cron jobs listed in the  `/etc/crontabs/nginx` file will run as the `nginx` user; scripts in `/etc/periodic/` dirs run as root.  You can preface commands in those scripts with `as-nginx` to run them as the nginx user.  (Note: the templates for scripts to be placed in `/etc/periodic` *must* have their executable bit set in order to run!)
+Cron jobs listed in the  `/etc/crontabs/nginx` file will run as the `nginx` user; scripts in `/etc/periodic/` dirs run as root.  You can preface commands in those scripts with `as-nginx` to run them as the nginx user, or `as-developer` to run them with developer privileges.  (Note: the templates for scripts to be placed in `/etc/periodic` *must* have their executable bit set in order to run!)
 
 As always, these configuration files can be generated by mounting templates in `/tpl` or via a `DOCKERIZE_TEMPLATES ` directory inside your codebase.
