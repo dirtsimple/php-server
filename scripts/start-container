@@ -98,9 +98,9 @@ grant() { ch$1 -Rf $2 $4 && chmod -Rf $3 $4 ; }
 apply-nginx-permissions() {
     maybe "${NGINX_READABLE-.}" grant grp nginx     g+r
     maybe "$NGINX_WRITABLE"     grant grp nginx     g+w
-    maybe "$NGINX_HIDE$NGINX_PROTEXT" as-developer echo >/dev/null  # ensure dev account exists
-    maybe "$NGINX_PROTECT"      grant own developer go-w
-    maybe "$NGINX_HIDE"         grant own developer go-rwx
+    maybe "$NGINX_NO_RWX$NGINX_NO_WRITE" as-developer echo >/dev/null  # ensure dev account exists
+    maybe "$NGINX_NO_WRITE"     grant own developer go-w
+    maybe "$NGINX_NO_RWX"       grant own developer go-rwx
 }
 
 run-composer-install() {
