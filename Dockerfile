@@ -9,6 +9,7 @@ RUN wget https://github.com/jwilder/dockerize/releases/download/$DOCKERIZE_VERSI
 
 ENV CODE_BASE /var/www/html
 ENV GIT_SSH /usr/bin/git-ssh
+ENV COMPOSER_OPTIONS --no-dev
 
 VOLUME /etc/letsencrypt
 

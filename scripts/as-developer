@@ -15,5 +15,6 @@ else
         chown developer "$CODE_BASE"
     fi
     export HOME=~developer
+    export PATH=~developer/.composer/vendor/bin:$CODE_BASE/vendor/bin:$PATH
     exec su -p developer -s /bin/bash -c "$cmd"
 fi

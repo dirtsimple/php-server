@@ -13,7 +13,7 @@ main() {
     apply-nginx-permissions
     generate-user-configuration
 
-    if composer.lock-exists; then
+    if composer.lock-exists && ! isTrue "${NO_COMPOSER_INSTALL}"; then
         run-composer-install
     fi
 
@@ -128,18 +128,18 @@ generate-user-configuration() {
             cp $CODE_BASE/conf/nginx/nginx-site$tag.conf  /etc/nginx/sites-available/default$tag.conf
         fi
     done
-
     # Install env-templated files if they exist - paths are relative to $CODE_BASE
     for tpl in ${DOCKERIZE_TEMPLATES}; do
         # deliberately leaving off quotes here to split on `:`
         expand-templates ${tpl/:/ }
     done
+    [ -z "$GLOBAL_REQUIRE" ] || as-developer composer global require "$GLOBAL_REQUIRE" || exit 1
 }
 
 
 run-composer-install() {
     # Try auto install for composer
-    as-developer composer install --no-dev --working-dir=$CODE_BASE || exit 1
+    as-developer composer install --working-dir="$CODE_BASE" $COMPOSER_OPTIONS || exit 1
 }
 
 run-user-scripts() {

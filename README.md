@@ -57,6 +57,14 @@ If you use any of the `git` or `composer` features of this image, they will be r
 
 If you need to run tasks inside the container as the developer user, you can use the `as-developer` script, e.g. `as-developer composer install`.  (The `push` and `pull` commands and the container start script already use `as-developer` internally to run git and composer.)
 
+#### Composer Configuration, `PATH`,  and Tools
+
+When running a command under `as-developer`, the `PATH` is expanded to include `~/.composer/vendor/bin` and `$CODE_BASE/vendor/bin`.  This allows you to easily run project-specific tools, and *also* to override them with globally-installed tools using `GLOBAL_REQUIRE`.
+
+Setting the `GLOBAL_REQUIRE` environment variable to a series of package specifiers causes them to be installed globally, just after templates are processed and before the project-level composer install.  For example setting  `GLOBAL_REQUIRE` to `"psy/psysh wp-cli/wp-cli"`  would install both Psysh and the Wordpress command line tools as part of the container.
+
+The `COMPOSER_OPTIONS` variable can also be set to change the command line options used by the default `composer install` run.  It defaults to `--no-dev`, but can be set to an empty string for a development environment.  If you need finer control over the installation process, you can also disable automatic installation by setting `NO_COMPOSER_INSTALL=true`, and then running your own installation scripts with `RUN_SCRIPTS` (which are run right after the composer-install step.
+
 
 ### Configuration Templating
 
