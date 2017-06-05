@@ -31,7 +31,7 @@ Inspired by (and implemented as a backward-compatible wrapper over) [ngineered/n
 
 This image assumes your primary application code will be found in the directory given by `CODE_BASE` (which defaults to `/var/www/html`).  You can place it there via a volume mount, installation in a derived image, or by specifying a `GIT_REPO` environment variable targeting your code.
 
-If a `GIT_REPO` is specified, the given repository will be cloned to the `CODE_BASE` directory at container startup, unless a `.git` subdirectory is already present  (e.g. in the case of a restart, or a mounted checkout).  If `GIT_BRANCH` is set, the specified branch will be used.  You can also supply a base64-encoded `SSH_KEY` to access protected repositories (including any checkouts done by `compsoer`).
+If a `GIT_REPO` is specified, the given repository will be cloned to the `CODE_BASE` directory at container startup, unless a `.git` subdirectory is already present  (e.g. in the case of a restart, or a mounted checkout).  If `GIT_BRANCH` is set, the specified branch will be used.  You can also supply a base64-encoded `SSH_KEY` to access protected repositories (including any checkouts done by `composer`).
 
 (Important: do *not* both mount your code as a volume *and* provide a `GIT_REPO`: your code will be **erased** unless it's already a git checkout, or you set `REMOVE_FILES=false` in your environment.)
 
@@ -147,12 +147,14 @@ services:
     build:
       context: https://github.com/dirtsimple/php-server.git
       args:
-        - EXTRA_APKS=ghostscript graphviz aspell-dev libmemcached-dev cyrus-sasl-dev
-        - EXTRA_EXTS=xmlrpc pspell
+        - EXTRA_APKS=ghostscript graphviz aspell-dev libmemcached-dev cyrus-sasl-dev openldap-dev
+        - EXTRA_EXTS=xmlrpc pspell ldap
         - EXTRA_PECL=memcached
     environment:
       - GIT_REPO=https://github.com/moodle/moodle.git
       - GIT_BRANCH=MOODLE_33_STABLE
+      - NGINX_WRITABLE=/moodledata
+      - USE_PATH_INFO=true
 ```
 
 For performance's sake, it's generally better to specify extras at build-time, but as a development convenience you can also pass them to the container as environment variables to be installed or built during container startup.  (Which, of course, will be slower as a result.)
