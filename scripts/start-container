@@ -91,9 +91,35 @@ setup-nginx-user() {
     NGINX_GROUPS=($(groups nginx))
 }
 
-grant-nginx() { [[ -z "$3" ]] || ( ch$1 -Rf nginx $3 && chmod -Rf $2 $3 ) || exit 1 ; }
+maybe() { [[ -z "$1" ]] || "${@:2}" "$1" || exit 1 ; }
 
-apply-nginx-permissions() { grant-nginx grp g+r "${NGINX_READABLE-.}" && grant-nginx grp g+w "$NGINX_WRITABLE" ; }
+grant() { ch$1 -Rf $2 $4 && chmod -Rf $3 $4 ; }
+
+apply-nginx-permissions() {
+    maybe "${NGINX_READABLE-.}" grant grp nginx     g+r
+    maybe "$NGINX_WRITABLE"     grant grp nginx     g+w
+    maybe "$NGINX_HIDE$NGINX_PROTEXT" as-developer echo >/dev/null  # ensure dev account exists
+    maybe "$NGINX_PROTECT"      grant own developer go-w
+    maybe "$NGINX_HIDE"         grant own developer go-rwx
+}
+
+run-composer-install() {
+    # Try auto install for composer
+    as-developer composer install --working-dir="$CODE_BASE" $COMPOSER_OPTIONS || exit 1
+}
+
+run-user-scripts() {
+    if isTrue "$RUN_SCRIPTS"; then
+        RUN_SCRIPTS="$CODE_BASE/scripts";
+    fi
+    if [[ ! -z "$RUN_SCRIPTS" ]] && [[ -d "$RUN_SCRIPTS" ]]; then
+        # run scripts in number order
+        for i in $(glob-list "$RUN_SCRIPTS/*"); do
+            reject-nginx-writable "$i"
+            chmod ug+x "$i" && "$i" || exit 1
+        done
+    fi
+}
 
 perform-git-checkout() {
     # Pull down code from git for our site!
@@ -136,24 +162,6 @@ generate-user-configuration() {
     [ -z "$GLOBAL_REQUIRE" ] || as-developer composer global require "$GLOBAL_REQUIRE" || exit 1
 }
 
-
-run-composer-install() {
-    # Try auto install for composer
-    as-developer composer install --working-dir="$CODE_BASE" $COMPOSER_OPTIONS || exit 1
-}
-
-run-user-scripts() {
-    if isTrue "$RUN_SCRIPTS"; then
-        RUN_SCRIPTS="$CODE_BASE/scripts";
-    fi
-    if [[ ! -z "$RUN_SCRIPTS" ]] && [[ -d "$RUN_SCRIPTS" ]]; then
-        # run scripts in number order
-        for i in $(glob-list "$RUN_SCRIPTS/*"); do
-            reject-nginx-writable "$i"
-            chmod ug+x "$i" && "$i" || exit 1
-        done
-    fi
-}
 
 exec-supervisord() {
     # Start supervisord and services
