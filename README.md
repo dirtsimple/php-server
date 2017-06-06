@@ -10,8 +10,9 @@ This is a docker image for an alpine nginx + php-fpm combo container, with suppo
 * Environment-based templating of any configuration file in the container at startup
 * Running any user-supplied startup scripts
 * 100% automated HTTPS certificate management via certbot and Let's Encrypt
+* Robust privilege separation and defense-in-depth for a variety of development and production use cases
 
-Inspired by (and implemented as a backward-compatible wrapper over) [ngineered/nginx-php-fpm](https://github.com/ngineered/nginx-php-fpm), this image supports all of that image's [configuration flags](https://github.com/ngineered/nginx-php-fpm/blob/master/docs/config_flags.md), plus the following enhancements and bug fixes:
+Inspired by (and implemented as a backward-compatible wrapper over) [ngineered/nginx-php-fpm](https://github.com/ngineered/nginx-php-fpm), this image supports all of that image's [configuration flags](https://github.com/ngineered/nginx-php-fpm/blob/master/docs/config_flags.md), plus many, many enhancements and bug fixes like these:
 
 * Configuration files are generated using [dockerize templates](https://github.com/jwilder/dockerize#using-templates) instead of `sed`, and boolean environment variables can be set to `true` or `false` , not just `1` or `0`
 * Your code can provide additional configuration files to be processed w/dockerize at container start time (or you can mount replacements for this image's configuration templates under `/tpl`)
@@ -21,10 +22,10 @@ Inspired by (and implemented as a backward-compatible wrapper over) [ngineered/n
 * You can add `.ini` files to `/etc/supervisor.d/` to add additional processes to the base supervisor configuration, or to override the default supervisor configurations for nginx, php-fpm, etc.
 * `php-fpm` pool parameters can be set with environment vars (`FPM_PM`, `FPM_MAX_CHILDREN`, `FPM_START_SERVERS`, `FPM_MIN_SPARE_SERVERS`, `FPM_MAX_SPARE_SERVERS`, `FPM_MAX_REQUESTS`)
 * nginx's `set_real_ip_from` is recursive, and supports Cloudflare (via `REAL_IP_CLOUDFLARE=true`) as well as your own load balancers/proxies (via `REAL_IP_FROM`)
-* Additional alpine APKs, PHP core extensions, and pecl extensions can be installed using the `EXTRA_APKS`, `EXTRA_EXTS`, and `EXTRA_PECL` build-time arguments, respectively.
+* Additional alpine APKs, PHP core extensions, and pecl extensions can be installed by setting `EXTRA_APKS`, `EXTRA_EXTS`, and `EXTRA_PECL` as environment variables or build-time arguments.
 * `sendfile` is turned on for optimal static file performance, unless you set `VIRTUALBOX_DEV=true`
 * Configuration files don't grow on each container restart
-* Developer and server priviliges are kept separate: git and composer are run as a `developer` user rather than as root, and files are owned by that user.  To be written to by PHP and the web server, files or directories must be explicitly listed in `NGINX_WRITABLE`.  The whole codebase is `NGINX_READABLE` by default, but can be made more restrictive by listing specific directories.
+* Developer and server priviliges are kept separate: git and composer are run as a `developer` user rather than as root, and files are owned by that user.  To be written to by PHP and the web server, files or directories must be explicitly listed in `NGINX_WRITABLE`.  (The whole codebase is `NGINX_READABLE` by default, but can be made more restrictive by listing specific directories.)
 * You can mount your code anywhere, not just `/var/www/html` (just set `CODE_BASE` to whatever directory you like)
 * If any supervised process (nginx, php-fpm, cron, etc.) enters a `FATAL` state, the entire container is shut down, so that configuration or other errors don't produce a silently unresponsive container.
 
