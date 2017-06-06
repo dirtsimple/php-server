@@ -1,4 +1,5 @@
 #!/bin/bash
+set -e
 
 if [ -z "$GIT_EMAIL" ] || [ -z "$GIT_NAME" ] ; then
     echo "You need a \$GIT_NAME and \$GIT_EMAIL for git pull to work" >&2
@@ -6,7 +7,7 @@ if [ -z "$GIT_EMAIL" ] || [ -z "$GIT_NAME" ] ; then
 fi
 
 cd ${CODE_BASE:-/var/www/html}
-as-developer git pull || exit 1
+as-developer git pull
 
 # Force the container to stop, so that composer, config files, etc. get updated
 # This is better than trying to handle all the corner cases of webserver state,

@@ -1,4 +1,5 @@
 #!/bin/bash
+set -e
 
 if [ ! -f /etc/letsencrypt/live/$DOMAIN/privkey.pem ] ; then
     mode=setup

@@ -1,7 +1,9 @@
 #!/bin/bash
+set -e
 
 uninstalled_apks() {
     grep -vxF -f <(apk info | sort) <(for apk; do echo $apk; done)
+    true
 }
 
 uninstalled_exts() {
@@ -22,7 +24,7 @@ apks=$(    uninstalled_apks tzdata $EXTRA_APKS)
 installs=$(uninstalled_exts $EXTRA_EXTS)
 pecls=$(   uninstalled_exts $EXTRA_PECL)
 
-[ -z "$apks"     ] || apk add --no-cache $apks         || exit 1
-[ -z "$installs" ] || docker-php-ext-install $installs || exit 1
-[ -z "$pecls"    ] || install_pecls $pecls             || exit 1
+[ -z "$apks"     ] || apk add --no-cache $apks
+[ -z "$installs" ] || docker-php-ext-install $installs
+[ -z "$pecls"    ] || install_pecls $pecls
 

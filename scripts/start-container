@@ -1,7 +1,8 @@
 #!/bin/bash
+set -e
 
 main() {
-    install-extras || exit 1
+    install-extras
     setup-environment-vars
     setup-nginx-user
     generate-system-configuration
@@ -21,7 +22,6 @@ main() {
     exec-supervisord
 }
 
-
 checkout-exists()      { [ -d "$CODE_BASE/.git" ]; }
 composer.lock-exists() { [ -f "$CODE_BASE/composer.lock" ]; }
 glob-list()            ( shopt -s nullglob; echo $1; )
@@ -30,18 +30,17 @@ setup-environment-vars() {
     # Set up CODE_BASE, PUBLIC_DIR, and WEBROOT
 
     CODE_BASE=${CODE_BASE:-/var/www/html}
-    export CODE_BASE="$(realpath $CODE_BASE)" || exit 1  # must exist!
+    export CODE_BASE="$(realpath $CODE_BASE)"   # must exist!
 
     cd "$CODE_BASE"
 
-    export PUBLIC_DIR="$(realpath ${PUBLIC_DIR-.})" || exit 1 # must exist!
+    export PUBLIC_DIR="$(realpath ${PUBLIC_DIR-.})" # must exist!
     export WEBROOT="${WEBROOT-${PUBLIC_DIR}}"
 }
 
 
 generate-system-configuration() {
     expand-templates /tpl /
-
     # Git config
     [[ -z "$GIT_NAME" ]]  || git config --system user.name  "$GIT_NAME";
     [[ -z "$GIT_EMAIL" ]] || git config --system user.email "$GIT_EMAIL";
@@ -49,14 +48,14 @@ generate-system-configuration() {
 }
 
 ensure-dir() {
-    [[ -d "$1" ]] || mkdir -p "$1" || exit 1
+    [[ -d "$1" ]] || mkdir -p "$1"
 }
 
 expand-template() {
     # Expand precisely one template file to a target filename
     reject-nginx-writable "$1"
     ensure-dir "$(dirname "$2")"
-    dockerize -template "$1:$2" || exit 1
+    dockerize -template "$1:$2"
 }
 
 reject-nginx-writable() {
@@ -64,6 +63,7 @@ reject-nginx-writable() {
         [[ "${dv[0]}" == "nginx" ]] || [[ "${dv[2]:8:1}" == "w" ]] ||
         ( [[ "${dv[2]:5:1}" == "w" ]] && [[ "${NGINX_GROUPS[*]}" =~ ^(.* |)${dv[1]}( .*|)$ ]] )
     ) && echo >&2 "${2-Template} file $1 must not be writable by nginx" && exit 1
+    true
 }
 
 expand-templates() {
@@ -105,7 +105,7 @@ apply-nginx-permissions() (
 
 run-composer-install() {
     # Try auto install for composer
-    as-developer composer install --working-dir="$CODE_BASE" $COMPOSER_OPTIONS || exit 1
+    as-developer composer install --working-dir="$CODE_BASE" $COMPOSER_OPTIONS
 }
 
 run-user-scripts() {
@@ -116,7 +116,7 @@ run-user-scripts() {
         # run scripts in number order
         for i in $(glob-list "$RUN_SCRIPTS/*"); do
             reject-nginx-writable "$i"
-            chmod ug+x "$i" && "$i" || exit 1
+            chmod ug+x "$i" && "$i"
         done
     fi
 }
@@ -143,7 +143,7 @@ perform-git-checkout() {
                 GIT_COMMAND=${GIT_COMMAND}" https://${GIT_USERNAME}:${GIT_PERSONAL_TOKEN}@${GIT_REPO}"
             fi
         fi
-        as-developer ${GIT_COMMAND} "$CODE_BASE" || exit 1
+        as-developer ${GIT_COMMAND} "$CODE_BASE"
     fi
 }
 
@@ -159,7 +159,7 @@ generate-user-configuration() {
         # deliberately leaving off quotes here to split on `:`
         expand-templates ${tpl/:/ }
     done
-    [ -z "$GLOBAL_REQUIRE" ] || as-developer composer global require "$GLOBAL_REQUIRE" || exit 1
+    [ -z "$GLOBAL_REQUIRE" ] || as-developer composer global require "$GLOBAL_REQUIRE"
 }
 
 
