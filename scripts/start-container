@@ -1,5 +1,4 @@
-#!/bin/bash
-set -e
+#!/bin/bash -e
 
 main() {
     install-extras
@@ -21,6 +20,7 @@ main() {
     run-user-scripts
     exec-supervisord
 }
+
 
 checkout-exists()      { [ -d "$CODE_BASE/.git" ]; }
 composer.lock-exists() { [ -f "$CODE_BASE/composer.lock" ]; }
@@ -91,16 +91,16 @@ setup-nginx-user() {
     NGINX_GROUPS=($(groups nginx))
 }
 
-maybe() { [[ -z "$1" ]] || "${@:2}" "$1" || exit 1 ; }
-grant() { ch$1 -Rf $2 $4 && chmod -Rf $3 $4 ; }
+grant() { for f in $4; do ch$1 -Rf $2 "$f" && chmod -Rf $3 $f ; done }
 
 apply-nginx-permissions() (
-    shopt -s nullglob globstar
-    maybe "${NGINX_READABLE-.}" grant grp nginx     g+r
-    maybe "$NGINX_WRITABLE"     grant grp nginx     g+w
-    maybe "$NGINX_NO_RWX$NGINX_NO_WRITE" as-developer echo >/dev/null  # ensure dev account exists
-    maybe "$NGINX_NO_WRITE"     grant own developer go-w
-    maybe "$NGINX_NO_RWX"       grant own developer go-rwx
+    shopt -s globstar
+    grant grp nginx g+r "${NGINX_READABLE-.}"
+    grant grp nginx g+w "$NGINX_WRITABLE"
+
+    [[ -z "$NGINX_NO_RWX$NGINX_NO_WRITE" ]] || as-developer  # ensure dev account exists
+    grant own developer go-w   "$NGINX_NO_WRITE"
+    grant own developer go-rwx "$NGINX_NO_RWX"
 )
 
 run-composer-install() {
