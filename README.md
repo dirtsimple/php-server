@@ -26,6 +26,7 @@ Inspired by (and implemented as a backward-compatible wrapper over) [ngineered/n
 * Configuration files don't grow on each container restart
 * Developer and server priviliges are kept separate: git and composer are run as a `developer` user rather than as root, and files are owned by that user.  To be written to by PHP and the web server, files or directories must be explicitly listed in `NGINX_WRITABLE`.  The whole codebase is `NGINX_READABLE` by default, but can be made more restrictive by listing specific directories.
 * You can mount your code anywhere, not just `/var/www/html` (just set `CODE_BASE` to whatever directory you like)
+* If any supervised process (nginx, php-fpm, cron, etc.) enters a `FATAL` state, the entire container is shut down, so that configuration or other errors don't produce a silently unresponsive container.
 
 ### Adding Your Code
 
