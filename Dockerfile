@@ -24,3 +24,7 @@ RUN /usr/bin/install-extras
 COPY scripts/ /usr/bin/
 COPY tpl /tpl
 
+ARG GLOBAL_REQUIRE
+ARG DEVELOPER_UID
+ARG DEVELOPER_GID
+RUN [[ -z "$GLOBAL_REQUIRE" ]] || as-developer composer global require "$GLOBAL_REQUIRE"
