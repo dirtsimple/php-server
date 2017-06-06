@@ -95,9 +95,8 @@ This image generates and uses the following configuration files in `/etc/nginx`,
 * `app.conf` -- the main app configuration for running PHP and serving files under the document root.  In general, if you need to change your nginx configuration, this is the first place to look.  Its contents are included *inside* of the `server {}` blocks for both the http and https servers, so they can both be configured from one file.
 * `http.conf` -- extra configuration for the `http {}` block, empty by default.  (Use this to define maps, caches, additional servers, etc.)
 * `nginx.conf` -- the main server configuration, with an `http` block that includes `http.conf` and any server configs listed in the `sites-enabled/` subdirectory
-* `sites-available/default.conf` -- the default `server` block for the HTTP protocol; includes `app.conf` to specify locations and server-level settings other than the listening port/protocol.  (This file is symlinked from `sites-enabled` by default.)
-* `sites-available/default-ssl.conf` -- the default `server` block for the HTTPS protocol; includes `app.conf` to specify locations and server-level settings other than the listening port/protocol/certs.  (This file is symlinked into `sites-enabled` by default, but does nothing unless `$DOMAIN` is set and a private key is available in `/etc/letsencrypt/live/$DOMAIN`.)
-* `cloudflare.conf` -- the settings needed for correct IP detection/logging when serving via cloudflare; this file is automatically included by `nginx.conf` if `REAL_IP_CLOUDFLARE`is set to `1`.
+* `sites-available/default.conf` -- the `server` block for the HTTP and HTTPS protocol; includes `app.conf` to specify locations and server-level settings other than the listening port/protocol/certs/etc.  HTTPS is only enabled if `$DOMAIN` is set and a private key is available in `/etc/letsencrypt/live/$DOMAIN`.  (This file is symlinked from `sites-enabled` by default.)
+* `cloudflare.conf` -- the settings needed for correct IP detection/logging when serving via cloudflare; this file is automatically included by `nginx.conf` if `REAL_IP_CLOUDFLARE` or `FLEXIBLE_SSL` are true.
 
 For backwards compatibility with `ngineered/nginx-php-fpm`, you can include a `conf/nginx/nginx-site.conf` and/or `conf/nginx/nginx-site-ssl.conf` in your `CODE_BASE` directory.  Doing this will, however, disable any features of `app.conf` that you don't copy into them.  It's recommended that you use `.nginx/app.conf` instead, going forward.
 
@@ -106,7 +105,9 @@ For backwards compatibility with `ngineered/nginx-php-fpm`, you can include a `c
 In addition, the following environment variables control how the above configuration files behave:
 
 * `PUBLIC_DIR` -- the subdirectory of `CODE_BASE` that should be used as the server's default document root.  If not specified, `CODE_BASE` is used as the default document root.
-* `FORCE_HTTPS` -- boolean: redirect all http requests to https; if `REAL_IP_CLOUDFLARE` is in effect, X-Forwarded-Proto is used to determine whether the request is https
+* `FORCE_HTTPS` -- boolean: redirect all http requests to https; if `FLEXIBLE_SSL` is in effect, X-Forwarded-Proto is used to determine whether the request is https
+* `REAL_IP_CLOUDFLARE` -- boolean: if true, trust Cloudflare to provide the true client IP (automatically applied if `FLEXIBLE_SSL` is true)
+* `FLEXIBLE_SSL` -- boolean: if true, trust Cloudflare to say whether the connection is HTTPS or not (implies `REAL_IP_CLOUDFLARE`)
 * `NGINX_IPV6` -- boolean: enables IPV6 in the http and/or https server blocks.  (Otherwise, only IPV4 is used.)
 * `STATIC_EXPIRES` -- expiration time to use for static files; if not set, use nginx defaults
 * `VIRTUALBOX_DEV` -- boolean: disables the `sendfile` option (use this when doing development with Docker Toolbox or boot2docker with a volume synced to OS X or Windows)

@@ -4,7 +4,6 @@ ENV DOCKERIZE_VERSION v0.4.0
 RUN wget https://github.com/jwilder/dockerize/releases/download/$DOCKERIZE_VERSION/dockerize-alpine-linux-amd64-$DOCKERIZE_VERSION.tar.gz \
     && tar -C /usr/local/bin -xzvf dockerize-alpine-linux-amd64-$DOCKERIZE_VERSION.tar.gz \
     && rm dockerize-alpine-linux-amd64-$DOCKERIZE_VERSION.tar.gz \
-    && ln -sf /etc/nginx/sites-available/default-ssl.conf /etc/nginx/sites-enabled/ \
     && easy_install supervisor==3.3.1  # suppress include-file warnings in supervisord
 
 ENV CODE_BASE /var/www/html
