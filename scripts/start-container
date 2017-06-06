@@ -92,16 +92,16 @@ setup-nginx-user() {
 }
 
 maybe() { [[ -z "$1" ]] || "${@:2}" "$1" || exit 1 ; }
-
 grant() { ch$1 -Rf $2 $4 && chmod -Rf $3 $4 ; }
 
-apply-nginx-permissions() {
+apply-nginx-permissions() (
+    shopt -s nullglob globstar
     maybe "${NGINX_READABLE-.}" grant grp nginx     g+r
     maybe "$NGINX_WRITABLE"     grant grp nginx     g+w
     maybe "$NGINX_NO_RWX$NGINX_NO_WRITE" as-developer echo >/dev/null  # ensure dev account exists
     maybe "$NGINX_NO_WRITE"     grant own developer go-w
     maybe "$NGINX_NO_RWX"       grant own developer go-rwx
-}
+)
 
 run-composer-install() {
     # Try auto install for composer
