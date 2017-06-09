@@ -124,7 +124,7 @@ If you want extreme backward compatibility with the default settings of `ngineer
 
 #### PHP Front Controllers and `PATH_INFO`
 
-Many PHP frameworks use a central entry point like `index.php` to process all dynamic paths in the application.  If your app is like this, you can set `PHP_CONTROLLER` to `true` to get a default front controller of `/index.php?$args` -- a value that works for correctly a wide variety of PHP applications and frameworks.  If your front controller isn't `index.php` or needs different parameters, you can specify the exact URI to be used instead of `true`.  (If the document root isn't the root of your code, you need to set `PUBLIC_DIR` as well.
+Many PHP frameworks use a central entry point like `index.php` to process all dynamic paths in the application.  If your app is like this, you can set `PHP_CONTROLLER` to `true` to get a default front controller of `/index.php$is_args$args` -- a value that works for correctly a wide variety of PHP applications and frameworks.  If your front controller isn't `index.php` or needs different parameters, you can specify the exact URI to be used instead of `true`.  (If the document root isn't the root of your code, you need to set `PUBLIC_DIR` as well.)
 
 For example, if you are deploying a Laravel application, you need to set `PUBLIC_DIR` to `public`, and `PHP_CONTROLLER` to `true`.  Then, any URLs that don't resolve to static files in `public` will be routed through `/index.php` instead of producing nginx 404 errors.
 
