@@ -91,7 +91,9 @@ setup-nginx-user() {
     NGINX_GROUPS=($(groups nginx))
 }
 
-grant() { for f in $4; do ch$1 -Rf $2 "$f" && chmod -Rf $3 $f ; done }
+grant() {
+    for f in $4; do ch$1 -Rf $2 "$f" && chmod -Rf $3 $f ; done
+}
 
 apply-nginx-permissions() (
     shopt -s globstar
@@ -110,15 +112,13 @@ run-composer-install() {
 
 run-user-scripts() {
     if isTrue "$RUN_SCRIPTS"; then
-        RUN_SCRIPTS="$CODE_BASE/scripts";
+        RUN_SCRIPTS="$CODE_BASE/scripts/*";
     fi
-    if [[ ! -z "$RUN_SCRIPTS" ]] && [[ -d "$RUN_SCRIPTS" ]]; then
-        # run scripts in number order
-        for i in $(glob-list "$RUN_SCRIPTS/*"); do
-            reject-nginx-writable "$i"
-            chmod ug+x "$i" && "$i"
-        done
-    fi
+    # run scripts in list-grouped, glob-sorted  order
+    for i in $(glob-list "$RUN_SCRIPTS"); do
+        reject-nginx-writable "$i"
+        chmod ug+x "$i" && "$i"
+    done
 }
 
 perform-git-checkout() {

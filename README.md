@@ -41,7 +41,7 @@ Whether you're using a `GIT_REPO` or not, this image checks for the following th
 
 * a `composer.lock` file (triggering an automatic `composer install` run if found)
 * Any configuration template directories specified in `DOCKERIZE_TEMPLATES` (see "Configuration Templating" below for details)
-* A startup scripts directory (specified by `RUN_SCRIPTS`) containing scripts that will be **run as root** in glob-sorted order during container startup, just before `supervisord` is launched.  (The directory name defaults to `scripts` if `RUN_SCRIPTS` is set to `1`,  `true`, `TRUE`, `T`, or `t`.)  These scripts **must not** be writable by the nginx user; the container will refuse to start if any of them are.
+* A list of startup scripts (or globs thereof),  specified by `RUN_SCRIPTS` that will be **run as root** in glob-sorted order during container startup, just before `supervisord` is launched.  (The search pattern defaults to `scripts/*` if `RUN_SCRIPTS` is set to `1`,  `true`, `TRUE`, `T`, or `t`.)  These scripts **must not** be writable by the nginx user; the container will refuse to start if any of them are.  (`RUN_SCRIPTS` can be a space-separated list of individual scripts in order to force them to be run in that order; if they are globs then each group will be glob-sorted but the order of groups will be as defined by `RUN_SCRIPTS`.)
 
 Note: if you are using a framework that exposes a subdirectory (like `web` or `public`) as the actual directory to be served by nginx, you must set the `PUBLIC_DIR` environment variable to that subdirectory (e.g. `public`).  (Assuming you don't override the default web server configuration; see more below.)
 
