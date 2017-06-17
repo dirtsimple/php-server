@@ -111,6 +111,7 @@ In addition, the following environment variables control how the above configura
 * `REAL_IP_CLOUDFLARE` -- boolean: if true, trust Cloudflare to provide the true client IP (automatically applied if `FLEXIBLE_SSL` is true)
 * `FLEXIBLE_SSL` -- boolean: if true, trust Cloudflare to say whether the connection is HTTPS or not (implies `REAL_IP_CLOUDFLARE`)
 * `NGINX_IPV6` -- boolean: enables IPV6 in the http and/or https server blocks.  (Otherwise, only IPV4 is used.)
+* `NGINX_WORKERS` -- number of nginx worker processes; defaults to 1
 * `STATIC_EXPIRES` -- expiration time to use for static files; if not set, use nginx defaults
 * `VIRTUALBOX_DEV` -- boolean: disables the `sendfile` option (use this when doing development with Docker Toolbox or boot2docker with a volume synced to OS X or Windows)
 
@@ -121,6 +122,7 @@ If you want extreme backward compatibility with the default settings of `ngineer
 * `STATIC_EXPIRES=5d`
 * `VIRTUALBOX_DEV=true` (not really needed unless you're actually using virtualbox)
 * `NGINX_READABLE=.` and `NGINX_WRITABLE=.`, to make the entire codebase readable and writable by nginx+php
+* `NGINX_WORKERS=5` (this is unnecessarily high for most apps, but that's how ngineered sets it)
 
 #### PHP Front Controllers and `PATH_INFO`
 
