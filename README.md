@@ -98,7 +98,7 @@ This image generates and uses the following configuration files in `/etc/nginx`,
 * `http.conf` -- extra configuration for the `http {}` block, empty by default.  (Use this to define maps, caches, additional servers, etc.)
 * `nginx.conf` -- the main server configuration, with an `http` block that includes `http.conf` and any server configs listed in the `sites-enabled/` subdirectory
 * `sites-available/default.conf` -- the `server` block for the HTTP and HTTPS protocol; includes `app.conf` to specify locations and server-level settings other than the listening port/protocol/certs/etc.  HTTPS is only enabled if `$DOMAIN` is set and a private key is available in `/etc/letsencrypt/live/$DOMAIN`.  (This file is symlinked from `sites-enabled` by default.)
-* `cloudflare.conf` -- the settings needed for correct IP detection/logging when serving via cloudflare; this file is automatically included by `nginx.conf` if `REAL_IP_CLOUDFLARE` or `FLEXIBLE_SSL` are true.
+* `cloudflare.conf` -- the settings needed for correct IP detection/logging when serving via cloudflare; this file is automatically included by `nginx.conf` if `REAL_IP_CLOUDFLARE` is true.
 
 For backwards compatibility with `ngineered/nginx-php-fpm`, you can include a `conf/nginx/nginx-site.conf` and/or `conf/nginx/nginx-site-ssl.conf` in your `CODE_BASE` directory.  Doing this will, however, disable any features of `app.conf` that you don't copy into them.  It's recommended that you use `.nginx/app.conf` instead, going forward.
 
@@ -107,9 +107,9 @@ For backwards compatibility with `ngineered/nginx-php-fpm`, you can include a `c
 In addition, the following environment variables control how the above configuration files behave:
 
 * `PUBLIC_DIR` -- the subdirectory of `CODE_BASE` that should be used as the server's default document root.  If not specified, `CODE_BASE` is used as the default document root.
-* `FORCE_HTTPS` -- boolean: redirect all http requests to https; if `FLEXIBLE_SSL` is in effect, X-Forwarded-Proto is used to determine whether the request is https
-* `REAL_IP_CLOUDFLARE` -- boolean: if true, trust Cloudflare to provide the true client IP (automatically applied if `FLEXIBLE_SSL` is true)
-* `FLEXIBLE_SSL` -- boolean: if true, trust Cloudflare to say whether the connection is HTTPS or not (implies `REAL_IP_CLOUDFLARE`)
+* `FORCE_HTTPS` -- boolean: redirect all http requests to https; if `FORWARDED_SSL` is in effect, X-Forwarded-Proto is used to determine whether the request is https
+* `REAL_IP_CLOUDFLARE` -- boolean: if true, trust Cloudflare to provide the true client IP
+* `FORWARDED_SSL` -- boolean: if true, trust Cloudflare or other proxies to say whether the connection is HTTPS or not, and override the `HTTPS` and `SERVER_PORT` fastcgi variables to match
 * `NGINX_IPV6` -- boolean: enables IPV6 in the http and/or https server blocks.  (Otherwise, only IPV4 is used.)
 * `NGINX_WORKERS` -- number of nginx worker processes; defaults to 1
 * `STATIC_EXPIRES` -- expiration time to use for static files; if not set, use nginx defaults
