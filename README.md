@@ -95,6 +95,7 @@ Template files are just plain text, except that they can contain Go template cod
 This image generates and uses the following configuration files in `/etc/nginx`, any or all of which can be replaced using mounts or template files:
 
 * `app.conf` -- the main app configuration for running PHP and serving files under the document root.  In general, if you need to change your nginx configuration, this is the first place to look.  Its contents are included *inside* of the `server {}` blocks for both the http and https servers, so they can both be configured from one file.
+* `static.conf` -- configuration for static files.  This is included in `app.conf` under any `EXCLUDE_PHP` locations.  With the exception of `expires`, any settings here should be wrapped in location sub-blocks.  The default version of this file includes settings for nginx's mp4 and flv modules, linked to the appropriate file types.
 * `http.conf` -- extra configuration for the `http {}` block, empty by default.  (Use this to define maps, caches, additional servers, etc.)
 * `nginx.conf` -- the main server configuration, with an `http` block that includes `http.conf` and any server configs listed in the `sites-enabled/` subdirectory
 * `sites-available/default.conf` -- the `server` block for the HTTP and HTTPS protocol; includes `app.conf` to specify locations and server-level settings other than the listening port/protocol/certs/etc.  HTTPS is only enabled if `$DOMAIN` is set and a private key is available in `/etc/letsencrypt/live/$DOMAIN`.  (This file is symlinked from `sites-enabled` by default.)
@@ -107,6 +108,7 @@ For backwards compatibility with `ngineered/nginx-php-fpm`, you can include a `c
 In addition, the following environment variables control how the above configuration files behave:
 
 * `PUBLIC_DIR` -- the subdirectory of `CODE_BASE` that should be used as the server's default document root.  If not specified, `CODE_BASE` is used as the default document root.
+* `EXCLUDE_PHP` -- a space-separated list of absolute location prefixes where PHP code should **not** be executed (e.g. `/wp-content/uploads` for Wordpress's file upload directory).  Within these locations, paths containing `.php` will return 404 errors, and everything else will be processed according to the rules in `static.conf`
 * `FORCE_HTTPS` -- boolean: redirect all http requests to https; if `FORWARDED_SSL` is in effect, X-Forwarded-Proto is used to determine whether the request is https
 * `REAL_IP_CLOUDFLARE` -- boolean: if true, trust Cloudflare to provide the true client IP, using the addresses listed in `cloudflare.conf`
 * `REAL_IP_FROM` -- space-separated list of address/netmask values designating proxies to trust as to the identity of the real client's IP
