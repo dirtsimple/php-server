@@ -99,7 +99,7 @@ apply-nginx-permissions() (
     shopt -s globstar
     grant grp nginx g+r "${NGINX_READABLE-.}"
     grant grp nginx g+w "$NGINX_WRITABLE"
-
+    grant own nginx o+w "$NGINX_OWNED"
     [[ -z "$NGINX_NO_RWX$NGINX_NO_WRITE" ]] || as-developer  # ensure dev account exists
     grant own developer go-w   "$NGINX_NO_WRITE"
     grant own developer go-rwx "$NGINX_NO_RWX"
