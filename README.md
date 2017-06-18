@@ -21,7 +21,7 @@ Inspired by (and implemented as a backward-compatible wrapper over) [ngineered/n
 * cron jobs are supported by setting `USE_CRON=true` and putting the job data in `/etc/crontabs/nginx`, or an executable file in one of the `/etc/periodic/` subdirectories (via volume mount, startup script, or template files)
 * You can add `.ini` files to `/etc/supervisor.d/` to add additional processes to the base supervisor configuration, or to override the default supervisor configurations for nginx, php-fpm, etc.
 * `php-fpm` pool parameters can be set with environment vars (`FPM_PM`, `FPM_MAX_CHILDREN`, `FPM_START_SERVERS`, `FPM_MIN_SPARE_SERVERS`, `FPM_MAX_SPARE_SERVERS`, `FPM_MAX_REQUESTS`)
-* nginx's `set_real_ip_from` is recursive, and supports Cloudflare (via `REAL_IP_CLOUDFLARE=true`) as well as your own load balancers/proxies (via `REAL_IP_FROM`)
+* nginx's `set_real_ip_from` is recursive, and supports Cloudflare (via `REAL_IP_CLOUDFLARE=true`) as well as your own load balancers/proxies (via `REAL_IP_FROM` -- which can include multiple addresses, separated by spaces.)
 * Additional alpine APKs, PHP core extensions, and pecl extensions can be installed by setting `EXTRA_APKS`, `EXTRA_EXTS`, and `EXTRA_PECL` as environment variables or build-time arguments.
 * `sendfile` is turned on for optimal static file performance, unless you set `VIRTUALBOX_DEV=true`
 * Configuration files don't grow on each container restart
@@ -108,7 +108,8 @@ In addition, the following environment variables control how the above configura
 
 * `PUBLIC_DIR` -- the subdirectory of `CODE_BASE` that should be used as the server's default document root.  If not specified, `CODE_BASE` is used as the default document root.
 * `FORCE_HTTPS` -- boolean: redirect all http requests to https; if `FORWARDED_SSL` is in effect, X-Forwarded-Proto is used to determine whether the request is https
-* `REAL_IP_CLOUDFLARE` -- boolean: if true, trust Cloudflare to provide the true client IP
+* `REAL_IP_CLOUDFLARE` -- boolean: if true, trust Cloudflare to provide the true client IP, using the addresses listed in `cloudflare.conf`
+* `REAL_IP_FROM` -- space-separated list of address/netmask values designating proxies to trust as to the identity of the real client's IP
 * `FORWARDED_SSL` -- boolean: if true, trust Cloudflare or other proxies to say whether the connection is HTTPS or not, and override the `HTTPS` and `SERVER_PORT` fastcgi variables to match
 * `NGINX_IPV6` -- boolean: enables IPV6 in the http and/or https server blocks.  (Otherwise, only IPV4 is used.)
 * `NGINX_WORKERS` -- number of nginx worker processes; defaults to 1
