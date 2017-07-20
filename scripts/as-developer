@@ -13,6 +13,7 @@ else
         DEVELOPER_GID="${DEVELOPER_GID-$DEVELOPER_UID}"
         [[ -z "$DEVELOPER_GID" ]] || addgroup -g "${DEVELOPER_GID}" developer
         adduser -D -s /sbin/nologin ${DEVELOPER_UID:+-u $DEVELOPER_UID} ${DEVELOPER_GID:+-G developer} developer
+        addgroup developer nginx
         chown developer "$CODE_BASE"
     fi
     export HOME=~developer
