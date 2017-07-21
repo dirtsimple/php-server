@@ -55,7 +55,7 @@ For compatibility with ngineered/nginx-php-fpm, there is also a `push` command t
 
 #### Permissions and the `developer` User
 
-If you use any of the `git` or `composer` features of this image, they will be run using a special `developer` user that's created on-demand.  This user is created inside the container, but you can set `DEVELOPER_UID` and/or `DEVELOPER_GID` so that the created user will have the right permissions to access or update files mounted from outside the container.  The developer user is also added to the `nginx` group inside the container, so that it can read and write files created by the app.  Once the user is created, ownership of the `CODE_BASE` root directory is changed to `developer`.  (Any existing contents retain their existing ownership and permissions.)
+If you use any of the `git` or `composer` features of this image, they will be run using a special `developer` user that's created on-demand.  This user is created inside the container, but you can set `DEVELOPER_UID` and/or `DEVELOPER_GID` so that the created user will have the right permissions to access or update files mounted from outside the container.  The developer user is also added to the `nginx` group inside the container, so that it can read and write files created by the app.  Once the user is created, ownership of the entire  `CODE_BASE` directory tree is changed to `developer`.
 
 If you need to run tasks inside the container as the developer user, you can use the `as-developer` script, e.g. `as-developer composer install`.  (The `push` and `pull` commands and the container start script already use `as-developer` internally to run git and composer.)
 
