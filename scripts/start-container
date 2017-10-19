@@ -30,14 +30,14 @@ setup-environment-vars() {
     # Set up CODE_BASE, PUBLIC_DIR, and WEBROOT
 
     CODE_BASE=${CODE_BASE:-/var/www/html}
+    [[ -d "$CODE_BASE" ]] || mkdir -p "$CODE_BASE"
     export CODE_BASE="$(realpath $CODE_BASE)"   # must exist!
 
     cd "$CODE_BASE"
-
+    [[ $PUBLIC_DIR ]] && mkdir -p "$PUBLIC_DIR"
     export PUBLIC_DIR="$(realpath ${PUBLIC_DIR-.})" # must exist!
     export WEBROOT="${WEBROOT-${PUBLIC_DIR}}"
 }
-
 
 generate-system-configuration() {
     expand-templates /tpl /
