@@ -1,4 +1,4 @@
-FROM richarvey/nginx-php-fpm:1.2.0
+FROM richarvey/nginx-php-fpm:1.2.4
 
 ENV DOCKERIZE_VERSION v0.4.0
 RUN wget https://github.com/jwilder/dockerize/releases/download/$DOCKERIZE_VERSION/dockerize-alpine-linux-amd64-$DOCKERIZE_VERSION.tar.gz \
