@@ -28,3 +28,6 @@ ARG GLOBAL_REQUIRE
 ARG DEVELOPER_UID
 ARG DEVELOPER_GID
 RUN [[ -z "$GLOBAL_REQUIRE" ]] || as-developer composer global require "$GLOBAL_REQUIRE"
+
+# Default to parallel downloads
+ENV GLOBAL_REQUIRE hirak/prestissimo

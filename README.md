@@ -67,6 +67,8 @@ When running a command under `as-developer`, the `PATH` is expanded to include `
 
 Setting the `GLOBAL_REQUIRE` environment variable to a series of package specifiers causes them to be installed globally, just after templates are processed and before the project-level composer install.  For example setting  `GLOBAL_REQUIRE` to `"psy/psysh wp-cli/wp-cli"`  would install both Psysh and the Wordpress command line tools as part of the container.  (You can also use `GLOBAL_REQUIRE` as a build-time argument, but then the `developer` user's uid and gid will be "baked in" to the container, so if you want to set them you'll need to supply the `DEVELOPER_UID` and `DEVELOPER_GID` as build arguments, too.)
 
+(The default value of `GLOBAL_REQUIRE` is "`hirak/prestissimo`", which enables fast parallel installs for composer.  If you set `GLOBAL_REQUIRE` yourself, you'll need to include that value yourself if you want to keep using parallel installs.  Altenrately, you can set `GLOBAL_REQUIRE` to an empty string to disable parallel installs.)
+
 The `COMPOSER_OPTIONS` variable can also be set to change the command line options used by the default `composer install` run.  It defaults to `--no-dev`, but can be set to an empty string for a development environment.  If you need finer control over the installation process, you can also disable automatic installation by setting `SKIP_COMPOSER=true`, and then running your own installation scripts with `RUN_SCRIPTS` (which are run right after the composer-install step.
 
 
