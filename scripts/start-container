@@ -159,9 +159,8 @@ generate-user-configuration() {
         # deliberately leaving off quotes here to split on `:`
         expand-templates ${tpl/:/ }
     done
-    [ -z "$GLOBAL_REQUIRE" ] || as-developer composer global require "$GLOBAL_REQUIRE"
+    [[ -z "$GLOBAL_REQUIRE" ]] || COMPOSER_ALLOW_SUPERUSER=1 composer global require "$GLOBAL_REQUIRE"
 }
-
 
 exec-supervisord() {
     # Start supervisord and services
