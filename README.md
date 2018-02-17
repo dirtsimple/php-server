@@ -12,7 +12,7 @@ This is a docker image for an alpine nginx + php-fpm combo container, with suppo
 * 100% automated HTTPS certificate management via certbot and Let's Encrypt
 * Robust privilege separation and defense-in-depth for a variety of development and production use cases
 
-Inspired by (and implemented as a backward-compatible wrapper over) [ngineered/nginx-php-fpm](https://github.com/ngineered/nginx-php-fpm), this image supports all of that image's [configuration flags](https://github.com/ngineered/nginx-php-fpm/blob/master/docs/config_flags.md), plus many, many enhancements and bug fixes like these:
+Inspired by (and implemented as a backward-compatible wrapper over) [richarvey/nginx-php-fpm](https://github.com/richarvey/nginx-php-fpm), this image supports most of that image's [configuration flags](https://github.com/ngineered/nginx-php-fpm/blob/master/docs/config_flags.md), plus many, many enhancements and bug fixes like these:
 
 * Configuration files are generated using [dockerize templates](https://github.com/jwilder/dockerize#using-templates) instead of `sed`, and boolean environment variables can be set to `true` or `false` , not just `1` or `0`
 * Your code can provide additional configuration files to be processed w/dockerize at container start time (or you can mount replacements for this image's configuration templates under `/tpl`)
@@ -28,6 +28,8 @@ Inspired by (and implemented as a backward-compatible wrapper over) [ngineered/n
 * Developer and server priviliges are kept separate: git and composer are run as a `developer` user rather than as root, and files are owned by that user.  To be written to by PHP and the web server, files or directories must be explicitly listed in `NGINX_WRITABLE`.  (The whole codebase is `NGINX_READABLE` by default, but can be made more restrictive by listing specific directories.)
 * You can mount your code anywhere, not just `/var/www/html` (just set `CODE_BASE` to whatever directory you like)
 * If any supervised process (nginx, php-fpm, cron, etc.) enters a `FATAL` state, the entire container is shut down, so that configuration or other errors don't produce a silently unresponsive container.
+
+Note: there are a few configuration options that must be specified in a different way than the richarvey image, or which have different defaults: see [Backward-Compatibility Settings](#backward-compatibility-settings), below, for more info.
 
 ### Adding Your Code
 
@@ -51,7 +53,7 @@ You can pull updates from `GIT_REPO` to `CODE_BASE` by running the `pull` comman
 
 (Note that you must set `GIT_NAME` to a commiter name, and `GIT_EMAIL` to a committer email, in order for pull operations to work correctly.)
 
-For compatibility with ngineered/nginx-php-fpm, there is also a `push` command that adds all non-gitignored files, commits them with a generic message, and pushes them to the origin.  (You're probably better off looking at the script as a guide to implementing your own, unless those are your exact requirements.)
+For compatibility with richarvey/nginx-php-fpm, there is also a `push` command that adds all non-gitignored files, commits them with a generic message, and pushes them to the origin.  (You're probably better off looking at the script as a guide to implementing your own, unless those are your exact requirements.)
 
 #### Permissions and the `developer` User
 
@@ -65,7 +67,7 @@ When running a command under `as-developer`, the `PATH` is expanded to include `
 
 Setting the `GLOBAL_REQUIRE` environment variable to a series of package specifiers causes them to be installed globally, just after templates are processed and before the project-level composer install.  For example setting  `GLOBAL_REQUIRE` to `"psy/psysh wp-cli/wp-cli"`  would install both Psysh and the Wordpress command line tools as part of the container.  (You can also use `GLOBAL_REQUIRE` as a build-time argument, but then the `developer` user's uid and gid will be "baked in" to the container, so if you want to set them you'll need to supply the `DEVELOPER_UID` and `DEVELOPER_GID` as build arguments, too.)
 
-The `COMPOSER_OPTIONS` variable can also be set to change the command line options used by the default `composer install` run.  It defaults to `--no-dev`, but can be set to an empty string for a development environment.  If you need finer control over the installation process, you can also disable automatic installation by setting `NO_COMPOSER_INSTALL=true`, and then running your own installation scripts with `RUN_SCRIPTS` (which are run right after the composer-install step.
+The `COMPOSER_OPTIONS` variable can also be set to change the command line options used by the default `composer install` run.  It defaults to `--no-dev`, but can be set to an empty string for a development environment.  If you need finer control over the installation process, you can also disable automatic installation by setting `SKIP_COMPOSER=true`, and then running your own installation scripts with `RUN_SCRIPTS` (which are run right after the composer-install step.
 
 
 ### Configuration Templating
@@ -101,7 +103,7 @@ This image generates and uses the following configuration files in `/etc/nginx`,
 * `sites-available/default.conf` -- the `server` block for the HTTP and HTTPS protocol; includes `app.conf` to specify locations and server-level settings other than the listening port/protocol/certs/etc.  HTTPS is only enabled if `$DOMAIN` is set and a private key is available in `/etc/letsencrypt/live/$DOMAIN`.  (This file is symlinked from `sites-enabled` by default.)
 * `cloudflare.conf` -- the settings needed for correct IP detection/logging when serving via cloudflare; this file is automatically included by `nginx.conf` if `REAL_IP_CLOUDFLARE` is true.
 
-For backwards compatibility with `ngineered/nginx-php-fpm`, you can include a `conf/nginx/nginx-site.conf` and/or `conf/nginx/nginx-site-ssl.conf` in your `CODE_BASE` directory.  Doing this will, however, disable any features of `app.conf` that you don't copy into them.  It's recommended that you use `.nginx/app.conf` instead, going forward.
+For backwards compatibility with `richarvey/nginx-php-fpm`, you can include `conf/nginx/nginx.conf`, `conf/nginx/nginx-site.conf`, and/or `conf/nginx/nginx-site-ssl.conf` file(s) in your `CODE_BASE` directory.  Doing this will, however, disable any features of `app.conf` that you don't copy into them.  It's recommended that you use `.nginx/app.conf` instead, going forward.
 
 #### Environment
 
@@ -122,14 +124,23 @@ In addition, the following environment variables control how the above configura
 * `STATIC_EXPIRES` -- expiration time to use for static files; if not set, use nginx defaults
 * `VIRTUALBOX_DEV` -- boolean: disables the `sendfile` option (use this when doing development with Docker Toolbox or boot2docker with a volume synced to OS X or Windows)
 
-If you want extreme backward compatibility with the default settings of `ngineered/nginx-php-fpm`, you can use the following settings:
+#### Backward-Compatibility Settings
 
-* `NGD_404=true` (use the ngineered-branded 404 handler from `ngineered/nginx-php-fpm` instead of nginx's default 404 handling)
+If you want extreme backward compatibility with the default settings of `richarvey/nginx-php-fpm`, you can use the following settings:
+
+* `NGD_404=true` (use the ngineered-branded 404 handler from `richarvey/nginx-php-fpm` instead of nginx's default 404 handling)
 * `NGINX_IPV6=true`
 * `STATIC_EXPIRES=5d`
 * `VIRTUALBOX_DEV=true` (not really needed unless you're actually using virtualbox)
 * `NGINX_READABLE=.` and `NGINX_WRITABLE=.`, to make the entire codebase readable and writable by nginx+php
-* `NGINX_WORKERS=5` (this is unnecessarily high for most apps, but that's how ngineered sets it)
+* `NGINX_WORKERS=auto`
+* `PHP_LOG_ERRORS=false`
+
+The following features of `richarvey/nginx-php-fpm` are not directly supported by this image, and must be configured in a different way:
+
+* `APPLICATION_ENV=development` -- set `COMPOSER_OPTIONS` to an empty string instead to disable the `--no-dev` flag
+* `SKIP_CHOWN` -- this image doesn't chown the code tree by default, but it *does* chgrp the code tree to the nginx user and set everything group readable, unless you explicitly set a different `NGINX_READABLE` value.  So the equivalent to `SKIP_CHOWN` would be to explicitly set `NGINX_READABLE` to empty, and not set values for any of the other permission variables (described under [File Permissions](#file-permissions) below).
+* `PHP_ERRORS_STDERR` -- this image always directs the PHP error log to stderr, and logs errors by default.  To disable error output, set `PHP_LOG_ERRORS=false`.
 
 #### PHP Front Controllers and `PATH_INFO`
 

@@ -13,7 +13,7 @@ main() {
     apply-nginx-permissions
     generate-user-configuration
 
-    if composer.lock-exists && ! isTrue "${NO_COMPOSER_INSTALL}"; then
+    if composer.lock-exists && ! isTrue "${SKIP_COMPOSER-$NO_COMPOSER_INSTALL}"; then
         run-composer-install
     fi
 
@@ -28,7 +28,6 @@ glob-list()            ( shopt -s nullglob; echo $1; )
 
 setup-environment-vars() {
     # Set up CODE_BASE, PUBLIC_DIR, and WEBROOT
-
     CODE_BASE=${CODE_BASE:-/var/www/html}
     [[ -d "$CODE_BASE" ]] || mkdir -p "$CODE_BASE"
     export CODE_BASE="$(realpath $CODE_BASE)"   # must exist!
@@ -37,6 +36,7 @@ setup-environment-vars() {
     [[ $PUBLIC_DIR ]] && mkdir -p "$PUBLIC_DIR"
     export PUBLIC_DIR="$(realpath ${PUBLIC_DIR-.})" # must exist!
     export WEBROOT="${WEBROOT-${PUBLIC_DIR}}"
+    export XDEBUG_EXT="$(find /usr/local/lib/php/extensions/ -name xdebug.so)"
 }
 
 generate-system-configuration() {
@@ -117,7 +117,7 @@ run-user-scripts() {
     # run scripts in list-grouped, glob-sorted  order
     for i in $(glob-list "$RUN_SCRIPTS"); do
         reject-nginx-writable "$i"
-        chmod ug+x "$i" && "$i"
+        chmod ug+x "$i" && sync && "$i"
     done
 }
 
@@ -149,10 +149,10 @@ perform-git-checkout() {
 
 generate-user-configuration() {
     # Enable custom nginx config files if they exist
+    set -- "$CODE_BASE/conf/nginx/nginx";
+    [[ ! -f $1.conf ]] || cp $1.conf /etc/nginx/nginx.conf;
     for tag in "" "-ssl"; do
-        if [ -f $CODE_BASE/conf/nginx/nginx-site$tag.conf ]; then
-            cp $CODE_BASE/conf/nginx/nginx-site$tag.conf  /etc/nginx/sites-available/default$tag.conf
-        fi
+        [[ ! -f $1-site$tag.conf ]] || cp $1-site$tag.conf  /etc/nginx/sites-available/default$tag.conf
     done
     # Install env-templated files if they exist - paths are relative to $CODE_BASE
     for tpl in ${DOCKERIZE_TEMPLATES}; do
