@@ -15,9 +15,9 @@ else
         [[ -z "$DEVELOPER_GID" ]] || addgroup -g "${DEVELOPER_GID}" developer
         adduser -D -s /sbin/nologin ${DEVELOPER_UID:+-u $DEVELOPER_UID} ${DEVELOPER_GID:+-G developer} developer
         addgroup developer nginx
-        chown -R developer "$CODE_BASE"
+        chown -R developer "$CODE_BASE" "$COMPOSER_HOME"
     fi
     export HOME=~developer
-    export PATH=~developer/.composer/vendor/bin:$CODE_BASE/vendor/bin:$PATH
+    export PATH=$CODE_BASE/vendor/bin:$COMPOSER_HOME/vendor/bin:$PATH
     exec su -p developer -s /bin/bash -c "$cmd"
 fi
