@@ -31,7 +31,7 @@ setup-environment-vars() {
     CODE_BASE=${CODE_BASE:-/var/www/html}
     [[ -d "$CODE_BASE" ]] || mkdir -p "$CODE_BASE"
     export CODE_BASE="$(realpath $CODE_BASE)"   # must exist!
-
+    [[ -z "$COMPOSER_CONFIG_JSON" ]] || { echo "$COMPOSER_CONFIG_JSON" >"$COMPOSER_HOME/config.json"; }
     cd "$CODE_BASE"
     [[ $PUBLIC_DIR ]] && mkdir -p "$PUBLIC_DIR"
     export PUBLIC_DIR="$(realpath ${PUBLIC_DIR-.})" # must exist!
