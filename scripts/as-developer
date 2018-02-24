@@ -1,7 +1,8 @@
 #!/bin/bash
 
 # Run specified command as developer user
-printf -v cmd " %q" "$@"
+if (($#)); then printf -v cmd " %q" "$@"; cmd="${cmd# }"; else cmd=""; fi
+
 set -e
 
 if [[ $(whoami) == 'developer' ]]; then
