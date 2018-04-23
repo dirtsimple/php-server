@@ -26,5 +26,4 @@ COPY tpl /tpl
 
 ARG GLOBAL_REQUIRE=hirak/prestissimo
 ENV COMPOSER_HOME /composer
-RUN [[ -z "$GLOBAL_REQUIRE" ]] || \
-    COMPOSER_ALLOW_SUPERUSER=1 composer global require $GLOBAL_REQUIRE
+RUN [[ -z "$GLOBAL_REQUIRE" ]] || composer-global $GLOBAL_REQUIRE

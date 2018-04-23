@@ -159,7 +159,7 @@ generate-user-configuration() {
         # deliberately leaving off quotes here to split on `:`
         expand-templates ${tpl/:/ }
     done
-    [[ -z "$GLOBAL_REQUIRE" ]] || as-developer composer global require $GLOBAL_REQUIRE
+    [[ -z "$GLOBAL_REQUIRE" ]] || as-developer composer-global $GLOBAL_REQUIRE
 }
 
 exec-supervisord() {

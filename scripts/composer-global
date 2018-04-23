@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+export COMPOSER_ALLOW_SUPERUSER=1
+
+args=()
+stab=
+for REPLY; do
+    case $REPLY in
+        *:dev*)
+            # If any requirement is for dev, set the minimum stability to dev
+            if [[ ! $stab ]]; then
+                stab=dev
+                composer global config minimum-stability "$stab"
+            fi
+            ;;&  # fall-through to check for prestissimo
+
+        hirak/prestissimo|hirak/prestissimo:*)
+            # Install prestissimo first so it speeds up the other installs
+            composer global require --prefer-dist "$REPLY"; continue ;;
+    esac
+    args+=("$REPLY")
+done
+
+if (( ${#args[@]})); then composer global require --prefer-dist "${args[@]}"; fi
