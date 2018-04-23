@@ -25,6 +25,6 @@ RUN /usr/bin/install-extras
 COPY scripts/ /usr/bin/
 COPY tpl /tpl
 
-ARG GLOBAL_REQUIRE=hirak/prestissimo
+ARG GLOBAL_REQUIRE=hirak/prestissimo:^0.3.7
 ENV COMPOSER_HOME /composer
 RUN [[ -z "$GLOBAL_REQUIRE" ]] || composer-global $GLOBAL_REQUIRE
