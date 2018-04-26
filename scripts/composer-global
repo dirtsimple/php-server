@@ -28,13 +28,13 @@ for REPLY; do
 		echo "Setting minimum-stability = dev"
 		composer global config minimum-stability dev
 	fi
-    case $REPLY in
-        hirak/prestissimo|hirak/prestissimo:*)
-            echo "Installing prestissimo first, to accelerate other installs"
-            composer global require --prefer-dist "$REPLY"
-            ;;
-        *)  args+=("$REPLY") ;;
-    esac
+	case $REPLY in
+		hirak/prestissimo|hirak/prestissimo:*)
+			echo "Installing prestissimo first, to accelerate other installs"
+			composer global require --prefer-dist "$REPLY"
+			;;
+		*)  args+=("$REPLY") ;;
+	esac
 done
 
 if ((${#args[@]})); then composer global require --prefer-dist "${args[@]}"; fi
