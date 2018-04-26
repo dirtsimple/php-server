@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 export COMPOSER_ALLOW_SUPERUSER=1
-mkdir -p /composer
-cd /composer
+mkdir -p "${COMPOSER_HOME:=/composer}"
+cd "${COMPOSER_HOME}"
 
 args=()
 
