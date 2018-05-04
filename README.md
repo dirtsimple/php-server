@@ -28,7 +28,7 @@ Inspired by (and implemented as a backward-compatible wrapper over) [richarvey/n
 * Developer and server priviliges are kept separate: git and composer are run as a `developer` user rather than as root, and files are owned by that user.  To be written to by PHP and the web server, files or directories must be explicitly listed in `NGINX_WRITABLE`.  (The whole codebase is `NGINX_READABLE` by default, but can be made more restrictive by listing specific directories.)
 * You can mount your code anywhere, not just `/var/www/html` (just set `CODE_BASE` to whatever directory you like)
 * If any supervised process (nginx, php-fpm, cron, etc.) enters a `FATAL` state, the entire container is shut down, so that configuration or other errors don't produce a silently unresponsive container.
-* Command-line PHP scripts run with a file-based opcache under `/tmp`, speeding start times for large PHP command line tools such as `wp-cli`, `artisan`, etc.  (For compatibility reasons, this cache is disabled when `ENABLE_XDEBUG` is true.)
+* Command-line PHP scripts run with a file-based opcache under `/tmp`, speeding start times for large PHP command line tools such as `wp-cli`, `artisan`, etc.  (For compatibility reasons, this cache is disabled when `ENABLE_XDEBUG` is true.)  Command-line scripts run without a memory limit, unless you set `PHP_CLI_MEMORY` to a memory value like `512M`.
 
 Note: there are a few configuration options that must be specified in a different way than the richarvey image, or which have different defaults: see [Backward-Compatibility Settings](#backward-compatibility-settings), below, for more info.
 
