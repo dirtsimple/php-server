@@ -20,13 +20,13 @@ have() {
 
 minstab() { if-composer '."minimum-stability" == "%s"' "$1"; }
 
-
 for REPLY; do
 	! have "$REPLY" || continue
 	echo "need $REPLY"
 	if [[ $REPLY = *:dev* ]] && ! minstab dev; then
-		echo "Setting minimum-stability = dev"
+		echo "Setting minimum-stability = dev + prefer-stable = true"
 		composer global config minimum-stability dev
+		composer global config prefer-stable true
 	fi
 	case $REPLY in
 		hirak/prestissimo|hirak/prestissimo:*)
