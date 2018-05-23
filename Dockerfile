@@ -23,7 +23,8 @@ COPY scripts/install-extras /usr/bin/
 ARG EXTRA_APKS
 ARG EXTRA_EXTS
 ARG EXTRA_PECL
-RUN EXTRA_APKS="jq $EXTRA_APKS" /usr/bin/install-extras
+RUN EXTRA_APKS="jq $EXTRA_APKS" /usr/bin/install-extras \
+    && echo '[[ ! -t 1 ]] || eval "$(resize)"' >/root/.bashrc
 
 COPY scripts/ /usr/bin/
 COPY tpl /tpl
