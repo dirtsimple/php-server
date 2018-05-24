@@ -25,7 +25,8 @@ COPY scripts/install-extras /usr/bin/
 ARG EXTRA_APKS
 ARG EXTRA_EXTS
 ARG EXTRA_PECL
-RUN EXTRA_APKS="jq ncurses $EXTRA_APKS" /usr/bin/install-extras
+RUN EXTRA_APKS="jq ncurses $EXTRA_APKS" /usr/bin/install-extras \
+    && echo '${STTY_SIZE:+ . termsize}' >/root/.bashrc
 
 COPY scripts/ /usr/bin/
 COPY tpl /tpl

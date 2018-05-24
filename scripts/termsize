@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+
+if [[ ${STTY_SIZE-} && ! "$(stty size 2>/dev/null)" ]]; then
+    set -- $STTY_SIZE
+    stty rows "$1" cols "$2"
+    unset STTY_SIZE
+fi

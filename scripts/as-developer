@@ -3,6 +3,9 @@
 # Run specified command as developer user
 if (($#)); then printf -v cmd " %q" "$@"; cmd="${cmd# }"; else cmd=""; fi
 
+# Resize terminal if needed
+${STTY_SIZE:+ . termsize}
+
 set -e
 
 if [[ $(whoami) == 'developer' ]]; then
