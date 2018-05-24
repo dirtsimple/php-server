@@ -3,9 +3,6 @@
 # Run specified command as developer user
 if (($#)); then printf -v cmd " %q" "$@"; cmd="${cmd# }"; else cmd=""; fi
 
-# Set terminal size for interactive commands
-[[ ! -t 1 ]] || eval "$(resize)"
-
 set -e
 
 if [[ $(whoami) == 'developer' ]]; then

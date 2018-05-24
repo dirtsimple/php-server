@@ -25,8 +25,7 @@ COPY scripts/install-extras /usr/bin/
 ARG EXTRA_APKS
 ARG EXTRA_EXTS
 ARG EXTRA_PECL
-RUN EXTRA_APKS="jq $EXTRA_APKS" /usr/bin/install-extras \
-    && echo '[[ ! -t 1 ]] || eval "$(resize)"' >/root/.bashrc
+RUN EXTRA_APKS="jq ncurses $EXTRA_APKS" /usr/bin/install-extras
 
 COPY scripts/ /usr/bin/
 COPY tpl /tpl
