@@ -3,7 +3,7 @@
 main() {
     install-extras
     setup-environment-vars
-    setup-nginx-user
+    setup-users
     generate-system-configuration
 
     if ! checkout-exists; then
@@ -80,19 +80,18 @@ expand-templates() {
     fi
 }
 
-setup-nginx-user() {
-    # Re-create nginx user w/specified UID/GID
-    if [ ! -z "$PUID" ]; then
-        if [ -z "$PGID" ]; then PGID=${PUID}; fi
-        deluser nginx
-        addgroup -g ${PGID} nginx
-        adduser -D -S -h /var/cache/nginx -s /sbin/nologin -G nginx -u ${PUID} nginx
-    fi
+setup-users() {
+    ensure-user nginx "${PUID-}" "${PGID-}"
+    ensure-user developer "${DEVELOPER_UID-}" "${DEVELOPER_GID-}"
     NGINX_GROUPS=($(groups nginx))
+    addgroup developer nginx
+    chown -Rf developer:developer "$COMPOSER_HOME" ~developer
 }
 
 grant() {
-    for f in $4; do ch$1 -Rf $2 "$f" && chmod -Rf $3 $f ; done
+    for f in $4; do
+        ch$1 -Rf $2 "$f" && chmod -Rf $3 $f
+    done
 }
 
 apply-nginx-permissions() (
@@ -100,10 +99,11 @@ apply-nginx-permissions() (
     grant grp nginx g+r "${NGINX_READABLE-.}"
     grant grp nginx g+w "$NGINX_WRITABLE"
     grant own nginx o+w "$NGINX_OWNED"
-    [[ -z "$NGINX_NO_RWX$NGINX_NO_WRITE" ]] || as-developer  # ensure dev account exists
+
     grant own developer go-w   "$NGINX_NO_WRITE"
     grant own developer go-rwx "$NGINX_NO_RWX"
 )
+
 
 run-composer-install() {
     # Try auto install for composer

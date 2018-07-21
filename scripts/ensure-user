@@ -1,0 +1,39 @@
+#!/usr/bin/env bash
+# Usage: ensure-user username [uid [gid [dirs...]]]
+#
+# Ensures that user `username` exists and has user/group ids of uid and gid.
+# The gid defaults to the uid if empty or not given.  If dirs are given and the
+# user/group id has to be changed, then files under those directories that had
+# the old uid or gid get changed to match the new uid or gid.  (This is also
+# *always* done in the user's home directory.)
+
+set -e
+got_uid=$(id -u "$1" 2>/dev/null) || got_uid=
+got_gid=$(id -g "$1" 2>/dev/null) || got_gid=
+want_uid=${2:-$got_uid}
+want_gid=${3:-$want_uid}
+user=$1
+dirs=("${@:4}")
+
+update() {
+	find "$homedir" "${dirs[@]}" "${@:2}" -print0 | xargs -r0 $1 -f "$user"
+}
+
+# No-op if the user exists and the existing IDs are ok
+if [[ ! $got_uid || $got_uid:$got_gid != $want_uid:$want_gid ]]; then
+	if [[ $want_gid ]]; then
+		if [[ $got_gid ]]; then
+			sed -i s/^"$1":x:$got_gid:/"$1":x:$want_gid:/ /etc/group
+		else addgroup -g "$want_gid" "$1"
+		fi
+	fi
+	if [[ ! $got_uid ]]; then
+		adduser -D -s /sbin/nologin ${want_uid:+-u "$want_uid"} ${want_gid:+-G "$1"} "$1"
+		[[ "$1" != developer ]] || addgroup developer nginx
+	else
+		sed -i s/^"$1":x:$got_uid:$got_gid:/"$1":x:$want_uid:$want_gid:/ /etc/passwd
+	fi
+	homedir=$(getent passwd "$1" |cut -d: -f6)
+	[[ ! $got_gid || $got_gid == $want_gid ]] || update chgrp -group $got_gid
+	[[ ! $got_uid || $got_uid == $want_uid ]] || update chown -user  $got_uid
+fi

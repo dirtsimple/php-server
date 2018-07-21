@@ -9,14 +9,6 @@ if [[ $(whoami) == 'developer' ]]; then
     # Already the user, just do it
     exec /bin/bash -c "$cmd"
 else
-    # Create the user if it doesn't exist; follow DEVELOPER_UID and DEVELOPER_GID if supplied
-    if ! id -u developer >/dev/null 2>&1; then
-        DEVELOPER_GID="${DEVELOPER_GID-$DEVELOPER_UID}"
-        [[ -z "$DEVELOPER_GID" ]] || addgroup -g "${DEVELOPER_GID}" developer
-        adduser -D -s /sbin/nologin ${DEVELOPER_UID:+-u $DEVELOPER_UID} ${DEVELOPER_GID:+-G developer} developer
-        addgroup developer nginx
-        chown -R developer "$CODE_BASE" "$COMPOSER_HOME"
-    fi
     export HOME=~developer
     export PATH=$CODE_BASE/vendor/bin:$HOME/.wp-cli/packages/vendor/bin:$COMPOSER_HOME/vendor/bin:$PATH
     exec su -p developer -s /bin/bash -c "$cmd"
