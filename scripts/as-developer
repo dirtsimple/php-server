@@ -3,9 +3,6 @@
 # Run specified command as developer user
 if (($#)); then printf -v cmd " %q" "$@"; cmd="${cmd# }"; else cmd=""; fi
 
-# Resize terminal if needed
-${STTY_SIZE:+ . termsize}
-
 set -e
 
 if [[ $(whoami) == 'developer' ]]; then
@@ -21,6 +18,6 @@ else
         chown -R developer "$CODE_BASE" "$COMPOSER_HOME"
     fi
     export HOME=~developer
-    export PATH=$CODE_BASE/vendor/bin:$COMPOSER_HOME/vendor/bin:$PATH
+    export PATH=$CODE_BASE/vendor/bin:$HOME/.wp-cli/packages/vendor/bin:$COMPOSER_HOME/vendor/bin:$PATH
     exec su -p developer -s /bin/bash -c "$cmd"
 fi

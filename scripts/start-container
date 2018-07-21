@@ -163,6 +163,12 @@ generate-user-configuration() {
 }
 
 exec-supervisord() {
+    # don't start if modd config is webserver-writable
+    [[ ! $MODD_CONF ]] || (
+        cd "${MODD_DIR-$CODE_BASE}"
+        reject-nginx-writable "$MODD_CONF" "modd config"
+    ) || exit $?
+
     # Start supervisord and services
     exec /usr/bin/supervisord -n -c /etc/supervisord.conf
 }

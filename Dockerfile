@@ -3,12 +3,12 @@ FROM jwilder/dockerize:0.6.0 AS dockerize
 FROM golang:1.8.3-alpine3.6 AS gobin
 RUN apk -U add openssl git \
     && go get github.com/bronze1man/yaml2json \
-    && go get github.com/bashup/reflex
+    && go get github.com/cortesi/modd/cmd/modd
 
 FROM richarvey/nginx-php-fpm:1.3.10
 COPY --from=dockerize /usr/local/bin/dockerize /usr/bin/
 COPY --from=gobin     /go/bin/yaml2json        /usr/bin/
-COPY --from=gobin     /go/bin/reflex           /usr/bin/
+COPY --from=gobin     /go/bin/modd             /usr/bin/
 
 RUN easy_install supervisor==3.3.1  # suppress include-file warnings in supervisord
 
@@ -25,8 +25,7 @@ COPY scripts/install-extras /usr/bin/
 ARG EXTRA_APKS
 ARG EXTRA_EXTS
 ARG EXTRA_PECL
-RUN EXTRA_APKS="jq ncurses $EXTRA_APKS" /usr/bin/install-extras \
-    && echo '${STTY_SIZE:+ . termsize}' >/root/.bashrc
+RUN EXTRA_APKS="jq ncurses $EXTRA_APKS" /usr/bin/install-extras
 
 COPY scripts/ /usr/bin/
 COPY tpl /tpl
