@@ -10,7 +10,7 @@ COPY --from=dockerize /usr/local/bin/dockerize /usr/bin/
 COPY --from=gobin     /go/bin/yaml2json        /usr/bin/
 COPY --from=gobin     /go/bin/modd             /usr/bin/
 
-RUN easy_install supervisor==3.3.1  # suppress include-file warnings in supervisord
+RUN easy_install supervisor==3.3.4  # suppress include-file warnings in supervisord
 
 ENV CODE_BASE /var/www/html
 ENV GIT_SSH /usr/bin/git-ssh

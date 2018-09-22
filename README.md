@@ -101,6 +101,7 @@ Template files are just plain text, except that they can contain Go template cod
 This image generates and uses the following configuration files in `/etc/nginx`, any or all of which can be replaced using mounts or template files:
 
 * `app.conf` -- the main app configuration for running PHP and serving files under the document root.  In general, if you need to change your nginx configuration, this is the first place to look.  Its contents are included *inside* of the `server {}` blocks for both the http and https servers, so they can both be configured from one file.
+* `*.app.conf` -- any files named with this pattern are loaded immediately after `app.conf`; by adding files named this way, you can extend the base configuration without needing to copy the default `app.conf`.
 * `static.conf` -- configuration for static files.  This is included in `app.conf` under any `EXCLUDE_PHP` locations.  With the exception of `expires`, any settings here should be wrapped in location sub-blocks.  The default version of this file includes settings for nginx's mp4 and flv modules, linked to the appropriate file types.
 * `http.conf` -- extra configuration for the `http {}` block, empty by default.  (Use this to define maps, caches, additional servers, etc.)
 * `nginx.conf` -- the main server configuration, with an `http` block that includes `http.conf` and any server configs listed in the `sites-enabled/` subdirectory
