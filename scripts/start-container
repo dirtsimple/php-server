@@ -122,30 +122,30 @@ run-user-scripts() {
 }
 
 perform-git-checkout() {
+
     # Pull down code from git for our site!
-    if [ ! -z "$GIT_REPO" ]; then
-        # Remove the test index file if you are pulling in a git repo
-        if ! isTrue "${REMOVE_FILES-true}"; then
-            echo "skipping removal of files"
-        else
-            rm -Rf $CODE_BASE/*
-        fi
-        GIT_COMMAND='git clone '
-        if [ ! -z "$GIT_BRANCH" ]; then
-            GIT_COMMAND=${GIT_COMMAND}" -b ${GIT_BRANCH}"
-        fi
-        if [ -z "$GIT_USERNAME" ] && [ -z "$GIT_PERSONAL_TOKEN" ]; then
-            GIT_COMMAND=${GIT_COMMAND}" ${GIT_REPO}"
-        else
-            if isTrue "$GIT_USE_SSH"; then
-                GIT_COMMAND=${GIT_COMMAND}" ${GIT_REPO}"
-            else
-                GIT_COMMAND=${GIT_COMMAND}" https://${GIT_USERNAME}:${GIT_PERSONAL_TOKEN}@${GIT_REPO}"
-            fi
-        fi
-        as-developer ${GIT_COMMAND} "$CODE_BASE"
-    fi
+    [[ ${GIT_REPO-} ]] || return 0
+
+	# Remove the test index file if you are pulling in a git repo
+	if ! isTrue "${REMOVE_FILES-true}"; then
+		echo "skipping removal of files"
+	else
+		rm -Rf "$CODE_BASE"/*
+	fi
+
+	set -- git clone  # build command
+	[[ ! "$GIT_BRANCH" ]] || set -- "$@" -b "$GIT_BRANCH"
+
+	if [[ ! "${GIT_USERNAME-}${GIT_PERSONAL_TOKEN-}" ]] || isTrue "${GIT_USE_SSH-}"; then
+		set -- "$@" "${GIT_REPO}"
+	else
+		set -- "$@" "https://${GIT_USERNAME}:${GIT_PERSONAL_TOKEN}@${GIT_REPO}"
+	fi
+
+	chown -R developer:developer "$CODE_BASE"
+	as-developer "$@" "$CODE_BASE"
 }
+
 
 generate-user-configuration() {
     # Enable custom nginx config files if they exist
