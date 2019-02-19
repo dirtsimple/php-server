@@ -5,6 +5,7 @@ FROM richarvey/nginx-php-fpm:1.3.10
 COPY --from=dockerize /usr/local/bin/dockerize /usr/bin/
 COPY --from=tools     /bin/yaml2json        /usr/bin/
 COPY --from=tools     /bin/modd             /usr/bin/
+COPY --from=tools     /bin/jq               /usr/bin/
 
 RUN easy_install supervisor==3.3.4  # suppress include-file warnings in supervisord
 
@@ -21,7 +22,7 @@ COPY scripts/install-extras /usr/bin/
 ARG EXTRA_APKS
 ARG EXTRA_EXTS
 ARG EXTRA_PECL
-RUN EXTRA_APKS="jq ncurses $EXTRA_APKS" /usr/bin/install-extras
+RUN EXTRA_APKS="ncurses $EXTRA_APKS" /usr/bin/install-extras
 
 COPY scripts/ /usr/bin/
 COPY tpl /tpl
