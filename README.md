@@ -119,7 +119,7 @@ In addition, the following environment variables control how the above configura
 * `FORCE_HTTPS` -- boolean: redirect all http requests to https; if `FORWARDED_SSL` is in effect, X-Forwarded-Proto is used to determine whether the request is https
 * `REAL_IP_CLOUDFLARE` -- boolean: if true, trust Cloudflare to provide the true client IP, using the addresses listed in `cloudflare.conf`
 * `REAL_IP_FROM` -- space-separated list of address/netmask values designating proxies to trust as to the identity of the real client's IP
-* `FORWARDED_SSL` -- boolean: if true, trust Cloudflare or other proxies to say whether the connection is HTTPS or not, and override the `HTTPS` and `SERVER_PORT` fastcgi variables to match
+* `FORWARDED_SSL` -- boolean: if true, trust Cloudflare or other proxies to say whether the connection is HTTPS or not, and override the `HTTPS`, `SERVER_NAME`, and `SERVER_PORT` fastcgi variables to match
 * `PHP_ACCESS_LOG` and `STATIC_ACCESS_LOG` -- the `access_log` settings to be used for PHP and static files, defaulting to `/dev/stdout` and `off`, respectively.
 * `PHP_LOG_ERRORS` -- boolean: if true, turns on PHP's `log_errors` setting.  True by default.
 * `APP_URL_PREFIX` -- a prefix to put in front of the `SCRIPT_NAME`, `REQUEST_URI`, and `DOCUMENT_URI` passed to PHP.  This should only be used when behind a proxy that is removing this prefix, e.g. when using a traefik `PathPrefixStrip`  rule.  (Note that apps which assume a static relationship between URIs and `DOCUMENT_ROOT` will not work properly with this setting and may require patching.)
