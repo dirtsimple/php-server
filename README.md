@@ -12,7 +12,7 @@ This is a docker image for an alpine nginx + php-fpm combo container, with suppo
 * 100% automated HTTPS certificate management via certbot and Let's Encrypt
 * Robust privilege separation and defense-in-depth for a variety of development and production use cases
 
-Inspired by (and implemented as a backward-compatible wrapper over) [richarvey/nginx-php-fpm](https://github.com/richarvey/nginx-php-fpm), this image supports most of that image's [configuration flags](https://github.com/ngineered/nginx-php-fpm/blob/master/docs/config_flags.md), plus many, many enhancements and bug fixes like these:
+Inspired by (and implemented as a backward-compatible wrapper over) [richarvey/nginx-php-fpm](https://gitlab.com/ric_harvey/nginx-php-fpm), this image supports most of that image's [configuration flags](https://gitlab.com/ric_harvey/nginx-php-fpm/blob/1.5.7/docs/config_flags.md), plus many, many enhancements and bug fixes like these:
 
 * Configuration files are generated using [dockerize templates](https://github.com/jwilder/dockerize#using-templates) instead of `sed`, and boolean environment variables can be set to `true` or `false` , not just `1` or `0`
 * Your code can provide additional configuration files to be processed w/dockerize at container start time (or you can mount replacements for this image's configuration templates under `/tpl`)
