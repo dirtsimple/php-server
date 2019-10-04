@@ -32,6 +32,30 @@ Inspired by (and implemented as a backward-compatible wrapper over) [richarvey/n
 
 Note: there are a few configuration options that must be specified in a different way than the richarvey image, or which have different defaults: see [Backward-Compatibility Settings](#backward-compatibility-settings), below, for more info.
 
+### Contents
+
+<!-- toc -->
+
+- [Adding Your Code](#adding-your-code)
+  * [Pulling Updates and Pushing Changes](#pulling-updates-and-pushing-changes)
+  * [Permissions and the `developer` User](#permissions-and-the-developer-user)
+  * [Composer Configuration, `PATH`, and Tools](#composer-configuration-path--and-tools)
+- [Configuration Templating](#configuration-templating)
+- [Nginx Configuration](#nginx-configuration)
+  * [Config Files](#config-files)
+  * [Environment](#environment)
+  * [Backward-Compatibility Settings](#backward-compatibility-settings)
+  * [PHP Front Controllers and `PATH_INFO`](#php-front-controllers-and-path_info)
+  * [File Permissions](#file-permissions)
+  * [HTTPS and Let's Encrypt Support](#https-and-lets-encrypt-support)
+- [Adding Extensions](#adding-extensions)
+- [Supervised Tasks](#supervised-tasks)
+  * [Scheduled Jobs (cron)](#scheduled-jobs-cron)
+  * [Changed-File Jobs (modd)](#changed-file-jobs-modd)
+- [Version Info](#version-info)
+
+<!-- tocstop -->
+
 ### Adding Your Code
 
 This image assumes your primary application code will be found in the directory given by `CODE_BASE` (which defaults to `/var/www/html`).  You can place it there via a volume mount, installation in a derived image, or by specifying a `GIT_REPO` environment variable targeting your code.
@@ -137,14 +161,14 @@ If you want extreme backward compatibility with the default settings of `richarv
 * `NGINX_IPV6=true`
 * `STATIC_EXPIRES=5d`
 * `VIRTUALBOX_DEV=true` (not really needed unless you're actually using virtualbox)
-* `NGINX_READABLE=.` and `NGINX_WRITABLE=.`, to make the entire codebase readable and writable by nginx+php
+* `NGINX_READABLE=.` and `NGINX_WRITABLE=.`, to make the entire codebase readable and writable by nginx+php (which is much less secure)
 * `NGINX_WORKERS=auto`
 * `PHP_LOG_ERRORS=false`
 
 The following features of `richarvey/nginx-php-fpm` are not directly supported by this image, and must be configured in a different way:
 
 * `APPLICATION_ENV=development` -- set `COMPOSER_OPTIONS` to an empty string instead to disable the `--no-dev` flag
-* `SKIP_CHOWN` -- this image doesn't chown the code tree by default, but it *does* chgrp the code tree to the nginx user and set everything group readable, unless you explicitly set a different `NGINX_READABLE` value.  So the equivalent to `SKIP_CHOWN` would be to explicitly set `NGINX_READABLE` to empty, and not set values for any of the other permission variables (described under [File Permissions](#file-permissions) below).
+* `SKIP_CHOWN` -- this image doesn't chown the code tree except when doing a git checkout.  But it *does* chgrp the code tree to the nginx user and set everything group readable by default, unless you explicitly set a different `NGINX_READABLE` value.  So the equivalent to `SKIP_CHOWN` would be to explicitly set `NGINX_READABLE` to empty, and not set values for any of the other permission variables (described under [File Permissions](#file-permissions) below).
 * `PHP_ERRORS_STDERR` -- this image always directs the PHP error log to stderr, and logs errors by default.  To disable error output, set `PHP_LOG_ERRORS=false`.
 
 #### PHP Front Controllers and `PATH_INFO`
@@ -235,7 +259,7 @@ Please note that the modd process runs as **root**, which means that your config
 
 ### Version Info
 
-| Tags         | [Upstream](https://github.com/richarvey/nginx-php-fpm) Version | PHP    | nginx  | mod lua |
-| ------------ | ------------------------------------------------------------ | ------ | ------ | ------- |
-| 1.0.x - 1.3.x | 1.3.10                                                       | 7.1.12 | 1.13.7 | 0.10.11 |
+| Tags          | Upstream Version                                                  | PHP    | nginx  | mod lua |
+| ------------- | ----------------------------------------------------------------- | ------ | ------ | ------- |
+| 1.0.x - 1.3.x | [1.3.10](https://gitlab.com/ric_harvey/nginx-php-fpm/tree/1.3.10) | 7.1.12 | 1.13.7 | 0.10.11 |
 
