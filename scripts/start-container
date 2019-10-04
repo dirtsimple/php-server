@@ -21,9 +21,9 @@ main() {
     exec-supervisord
 }
 
-
 checkout-exists()      { [ -d "$CODE_BASE/.git" ]; }
 composer.lock-exists() { [ -f "$CODE_BASE/composer.lock" ]; }
+# shellcheck disable=SC2086
 glob-list()            ( shopt -s nullglob; echo $1; )
 
 setup-environment-vars() {
@@ -59,10 +59,10 @@ expand-template() {
 }
 
 reject-nginx-writable() {
-    dv=($(stat -Lc "%U %G %A" "$1")) && (
-        [[ "${dv[0]}" == "nginx" ]] || [[ "${dv[2]:8:1}" == "w" ]] ||
-        ( [[ "${dv[2]:5:1}" == "w" ]] && [[ "${NGINX_GROUPS[*]}" =~ ^(.* |)${dv[1]}( .*|)$ ]] )
-    ) && echo >&2 "${2-Template} file $1 must not be writable by nginx" && exit 1
+    dv=($(stat -Lc "%U %G %A" "$1")) && [[
+		"${dv[0]}" == "nginx" || "${dv[2]:8:1}" == "w" ||
+		( "${dv[2]:5:1}" == "w" && " ${NGINX_GROUPS[*]} " = *" ${dv[1]} "* )
+	]] && echo >&2 "${2-Template} file $1 must not be writable by nginx" && exit 1
     true
 }
 
