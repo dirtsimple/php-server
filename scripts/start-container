@@ -117,7 +117,8 @@ run-user-scripts() {
     # run scripts in list-grouped, glob-sorted  order
     for i in $(glob-list "$RUN_SCRIPTS"); do
         reject-nginx-writable "$i"
-        chmod ug+x "$i" && sync && "$i"
+        [[ -x "$i" ]] || { chmod ug+x "$i" && sync; } || return
+        "$i"
     done
 }
 
