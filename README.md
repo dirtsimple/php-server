@@ -201,6 +201,8 @@ services:
 
 For performance's sake, it's generally better to specify extras at build-time, but as a development convenience you can also pass them to the container as environment variables to be installed or built during container startup.  (Which, of course, will be slower as a result.)
 
+Specific versions of a PECL module can be forced by using a `:`, e.g. `EXTRA_PECL=mcrypt:1.0.2`.  (A `:` is used in place of a `-` so that the version can be stripped from the extension name in generated PHP .ini file(s).)
+
 ### Supervised Tasks
 
 Any files named `/etc/supervisor.d/*.ini` are included as part of the supervisord configuration, so that you can add your own supervised tasks.  (For example, if you wanted to add a mysql or openssh server.)  This image's own tasks are there as well, and can be overridden by your own substitutions in `/tpl/etc/supervisor.d` or a `DOCKERIZE_TEMPLATES` directory:
