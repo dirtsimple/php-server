@@ -104,7 +104,6 @@ apply-nginx-permissions() (
     grant own developer go-rwx "$NGINX_NO_RWX"
 )
 
-
 run-composer-install() {
     # Try auto install for composer
     as-developer composer install --working-dir="$CODE_BASE" $COMPOSER_OPTIONS
@@ -123,7 +122,6 @@ run-user-scripts() {
 }
 
 perform-git-checkout() {
-
     # Pull down code from git for our site!
     [[ ${GIT_REPO-} ]] || return 0
 
@@ -142,14 +140,12 @@ perform-git-checkout() {
 	else
 		set -- "$@" "https://${GIT_USERNAME}:${GIT_PERSONAL_TOKEN}@${GIT_REPO}"
 	fi
-
 	chown -R developer:developer "$CODE_BASE"
 	as-developer "$@" "$CODE_BASE"
 	if [[ "$GIT_TAG$GIT_COMMIT" ]]; then
 		as-developer git -C "$CODE_BASE" checkout "${GIT_TAG-$GIT_COMMIT}"
 	fi
 }
-
 
 generate-user-configuration() {
     # Enable custom nginx config files if they exist
@@ -177,5 +173,14 @@ exec-supervisord() {
     exec /usr/bin/supervisord -n -c /etc/supervisord.conf
 }
 
-main
+# for consistency, exactly match how dockerize's isTrue function works
+isTrue() {
+	case $1 in true|TRUE|True|T|t|1) return  ;;  # these strings are true
+	esac
+	false # all others are false
+}
+
+if [[ $0 == "$BASH_SOURCE" ]]; then
+	main
+fi
 
