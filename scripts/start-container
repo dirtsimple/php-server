@@ -145,6 +145,9 @@ perform-git-checkout() {
 
 	chown -R developer:developer "$CODE_BASE"
 	as-developer "$@" "$CODE_BASE"
+	if [[ "$GIT_TAG$GIT_COMMIT" ]]; then
+		as-developer git -C "$CODE_BASE" checkout "${GIT_TAG-$GIT_COMMIT}"
+	fi
 }
 
 
