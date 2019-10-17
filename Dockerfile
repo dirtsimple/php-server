@@ -19,9 +19,9 @@ RUN apk --no-cache add \
 	&& \
 	apk --update add \
 		bash nginx nginx-mod-http-lua nginx-mod-http-lua-upstream \
-		supervisor ncurses \
+		supervisor ncurses certbot \
 		git wget curl libcurl openssh-client ca-certificates \
-		python py-pip dialog libpq icu-libs \
+		dialog libpq icu-libs \
 		libmcrypt libxslt libpng freetype libjpeg-turbo \
 	&& \
     apk add --virtual .build-deps \
@@ -39,7 +39,6 @@ RUN apk --no-cache add \
 		mcrypt gd exif intl xsl json soap dom zip opcache && \
 	pecl install xdebug && \
 	docker-php-source delete && \
-	pip install -U certbot && \
 	apk del .build-deps
 
 # -------- Setup composer and runtime environment
