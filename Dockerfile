@@ -13,18 +13,18 @@ COPY --from=tools     /bin/jq               /usr/bin/
 # -------- Add packages and build/install tools
 
 ENV LD_PRELOAD /usr/lib/preloadable_libiconv.so php
-RUN apk add --no-cache \
-	--repository http://dl-3.alpinelinux.org/alpine/edge/community \
-	gnu-libiconv \
+RUN apk --no-cache add \
+		--repository http://dl-3.alpinelinux.org/alpine/edge/community \
+		gnu-libiconv \
 	&& \
-	apk --no-cache add \
+	apk --update add \
 		bash nginx nginx-mod-http-lua nginx-mod-http-lua-upstream \
 		supervisor ncurses \
 		git wget curl libcurl openssh-client ca-certificates \
 		python py-pip dialog libpq icu-libs \
 		libmcrypt libxslt libpng freetype libjpeg-turbo \
 	&& \
-    apk --no-cache add --virtual .build-deps \
+    apk add --virtual .build-deps \
 		autoconf gcc make musl-dev linux-headers libffi-dev \
 		augeas-dev python-dev icu-dev sqlite-dev openssl-dev \
 		libmcrypt-dev libxslt-dev libpng-dev freetype-dev libjpeg-turbo-dev \
@@ -47,8 +47,6 @@ RUN apk add --no-cache \
 ADD https://getcomposer.org/download/1.9.0/composer.phar /usr/bin/composer
 RUN chmod ugo+rx /usr/bin/composer && \
 	mkdir -p /run/nginx /etc/nginx/sites-enabled && \
-	rm -rf /var/cache/apk/* /tmp/* && \
-	apk update && \
 	ln -s ../sites-available/default.conf /etc/nginx/sites-enabled/default.conf
 
 # -------- Add our stuff, process build args, and initialize composer globals

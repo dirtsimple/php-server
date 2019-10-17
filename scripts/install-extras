@@ -13,7 +13,7 @@ uninstalled_exts() {
 
 install_pecls() {
     docker-php-source extract
-    apk add --no-cache --virtual .phpize-deps $PHPIZE_DEPS
+    apk add --virtual .phpize-deps $PHPIZE_DEPS
     for pecl; do
         pecl install "${pecl/:/-}"
         docker-php-ext-enable "${pecl/%:*}"
@@ -26,7 +26,7 @@ apks=$(    uninstalled_apks tzdata $EXTRA_APKS)
 installs=$(uninstalled_exts $EXTRA_EXTS)
 pecls=$(   uninstalled_exts $EXTRA_PECL)
 
-if [[ "$apks"     ]]; then apk add --no-cache $apks; fi
+if [[ "$apks"     ]]; then apk add $apks; fi
 if [[ "$installs" ]]; then docker-php-ext-install $installs; fi
 if [[ "$pecls"    ]]; then install_pecls $pecls; fi
 
