@@ -1,16 +1,16 @@
 #!/bin/bash
 set -e
 
-if [ ! -f /etc/letsencrypt/live/$DOMAIN/privkey.pem ] ; then
-    mode=setup
-    rm /etc/nginx/sites-enabled/default-ssl.conf || true
+if [[ -f /etc/letsencrypt/live/$DOMAIN/privkey.pem ]]; then
+    certbot renew
 else
-    mode=renew
+    certbot certonly --webroot -w "$WEBROOT" -d "$DOMAIN" \
+        --email "$LETS_ENCRYPT" --agree-tos --quiet
+
+    # Force template rebuild so SSL will be enabled
+    source start-container
+    generate-system-configuration
+    generate-user-configuration
 fi
 
-GIT_EMAIL="$LETS_ENCRYPT" /usr/bin/letsencrypt-$mode
-
-# Force template rebuild if we just added the cert
-if [[ "$mode" == "setup" ]]; then
-    supervisorctl shutdown
-fi
+supervisorctl restart nginx

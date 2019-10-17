@@ -6,6 +6,6 @@ cmd=$@
 if [[ $(whoami) == 'nginx' ]]; then
     exec /bin/bash -c "$cmd"
 else
-    export HOME=/var/cache/nginx
+    export HOME=/var/lib/nginx
     exec su -p nginx -s /bin/bash -c "$cmd"
 fi

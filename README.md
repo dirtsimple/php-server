@@ -12,7 +12,7 @@ This is a docker image for an alpine nginx + php-fpm combo container, with suppo
 * 100% automated HTTPS certificate management via certbot and Let's Encrypt
 * Robust privilege separation and defense-in-depth for a variety of development and production use cases
 
-Inspired by (and implemented as a backward-compatible wrapper over) [richarvey/nginx-php-fpm](https://gitlab.com/ric_harvey/nginx-php-fpm), this image supports most of that image's [configuration flags](https://gitlab.com/ric_harvey/nginx-php-fpm/blob/1.5.7/docs/config_flags.md), plus many, many enhancements and bug fixes like these:
+Inspired by [richarvey/nginx-php-fpm](https://gitlab.com/ric_harvey/nginx-php-fpm), this image supports most of that image's [configuration flags](https://gitlab.com/ric_harvey/nginx-php-fpm/blob/1.5.7/docs/config_flags.md), plus many, many enhancements and bug fixes like these:
 
 * Configuration files are generated using [dockerize templates](https://github.com/jwilder/dockerize#using-templates) instead of `sed`, and boolean environment variables can be set to `true` or `false` , not just `1` or `0`
 * Your code can provide additional configuration files to be processed w/dockerize at container start time (or you can mount replacements for this image's configuration templates under `/tpl`)
@@ -157,7 +157,6 @@ In addition, the following environment variables control how the above configura
 
 If you want extreme backward compatibility with the default settings of `richarvey/nginx-php-fpm`, you can use the following settings:
 
-* `NGD_404=true` (use the ngineered-branded 404 handler from `richarvey/nginx-php-fpm` instead of nginx's default 404 handling)
 * `NGINX_IPV6=true`
 * `STATIC_EXPIRES=5d`
 * `VIRTUALBOX_DEV=true` (not really needed unless you're actually using virtualbox)
@@ -170,6 +169,7 @@ The following features of `richarvey/nginx-php-fpm` are not directly supported b
 * `APPLICATION_ENV=development` -- set `COMPOSER_OPTIONS` to an empty string instead to disable the `--no-dev` flag
 * `SKIP_CHOWN` -- this image doesn't chown the code tree except when doing a git checkout.  But it *does* chgrp the code tree to the nginx user and set everything group readable by default, unless you explicitly set a different `NGINX_READABLE` value.  So the equivalent to `SKIP_CHOWN` would be to explicitly set `NGINX_READABLE` to empty, and not set values for any of the other permission variables (described under [File Permissions](#file-permissions) below).
 * `PHP_ERRORS_STDERR` -- this image always directs the PHP error log to stderr, and logs errors by default.  To disable error output, set `PHP_LOG_ERRORS=false`.
+* If you want a custom 404 page, you need to configure it via a configuration file
 
 #### PHP Front Controllers and `PATH_INFO`
 
@@ -259,7 +259,8 @@ Please note that the modd process runs as **root**, which means that your config
 
 ### Version Info
 
-| Tags          | Upstream Version                                                  | PHP    | nginx  | mod lua |
-| ------------- | ----------------------------------------------------------------- | ------ | ------ | ------- |
-| 1.0.x - 1.3.x | [1.3.10](https://gitlab.com/ric_harvey/nginx-php-fpm/tree/1.3.10) | 7.1.12 | 1.13.7 | 0.10.11 |
+| Tags          | Upstream Version                                                  | PHP    | nginx  | mod lua | alpine |
+| ------------- | ----------------------------------------------------------------- | ------ | ------ | ------- | ------ |
+| 1.0.x - 1.3.x | [1.3.10](https://gitlab.com/ric_harvey/nginx-php-fpm/tree/1.3.10) | 7.1.12 | 1.13.7 | 0.10.11 | 3.6    |
+| 1.4.x         | N/A                                                               | 7.1.32 | 1.14.2 | 0.10.15 | 3.9    |
 
