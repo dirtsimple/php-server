@@ -187,7 +187,7 @@ In some cases, it may be easier to specify what should *not* be readable or writ
 
 Both variables can be used to list file or directory paths that will be recursively `chown`'d to `developer` (creating the `developer` user if necessary), and then have the relevant permissions revoked.  For simplicity's sake, existing file groups are not checked, so if you are sharing files outside the container this may not do what you want or expect.
 
-Note: file permissions are applied prior to processing template files and running startup scripts, so if you make your entire codebase writable you will not be able to use configuration templates or startup scripts.  To preserve separation of privileges within the container, you will need to explicitly list subdirectories of your code that do *not* include your templates or startup scripts, or else list those templates and startup scripts under `NGINX_PROTECT`.
+Note: file permissions are applied prior to processing template files and running startup scripts, so if you make your entire codebase writable you will not be able to use configuration templates or startup scripts.  To preserve separation of privileges within the container, you will need to explicitly list subdirectories of your code that do *not* include your templates or startup scripts, or else list those templates and startup scripts under `NGINX_NO_WRITE`.
 
 In addition, please note that these permission changes are applied only to files and directories that actually *exist*: files created by startup scripts or nginx/php later will not magically have these permissions applied.  To get the results you want in such cases, you may need to apply permissions to a parent directory, or pre-create the necessary files or directories yourself.
 
