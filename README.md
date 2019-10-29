@@ -262,5 +262,6 @@ Please note that the modd process runs as **root**, which means that your config
 | Tags          | Upstream Version                                                  | PHP    | nginx  | mod lua | alpine |
 | ------------- | ----------------------------------------------------------------- | ------ | ------ | ------- | ------ |
 | 1.0.x - 1.3.x | [1.3.10](https://gitlab.com/ric_harvey/nginx-php-fpm/tree/1.3.10) | 7.1.12 | 1.13.7 | 0.10.11 | 3.6    |
-| 1.4.x         | N/A                                                               | 7.1.32 | 1.14.2 | 0.10.15 | 3.9    |
+| 1.4.0         | N/A                                                               | 7.1.32 | 1.14.2 | 0.10.15 | 3.9    |
+| 1.4.x         | N/A                                                               | 7.1.33 | 1.14.2 | 0.10.15 | 3.9    |
 

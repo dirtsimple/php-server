@@ -2,7 +2,7 @@
 
 FROM jwilder/dockerize:0.6.0 AS dockerize
 FROM bashitup/alpine-tools:latest AS tools
-FROM php:7.1.32-fpm-alpine3.9
+FROM php:7.1.33-fpm-alpine3.9
 
 COPY --from=dockerize /usr/local/bin/dockerize /usr/bin/
 
