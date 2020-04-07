@@ -21,11 +21,11 @@ RUN apk --no-cache add \
 		bash nginx nginx-mod-http-lua nginx-mod-http-lua-upstream \
 		supervisor ncurses certbot \
 		git wget curl libcurl openssh-client ca-certificates \
-		dialog libpq icu-libs \
+		dialog libpq icu-libs imap-dev libzip \
 		libmcrypt libxslt libpng freetype libjpeg-turbo \
 	&& \
     apk add --virtual .build-deps \
-		autoconf gcc make musl-dev linux-headers libffi-dev \
+		autoconf gcc make musl-dev linux-headers libffi-dev libzip-dev \
 		augeas-dev python-dev icu-dev sqlite-dev openssl-dev \
 		libmcrypt-dev libxslt-dev libpng-dev freetype-dev libjpeg-turbo-dev \
 	&& \
@@ -34,9 +34,13 @@ RUN apk --no-cache add \
 		--with-freetype-dir=/usr/include/ --with-png-dir=/usr/include/ \
 		--with-jpeg-dir=/usr/include/ \
 	&& \
+	docker-php-ext-configure zip --with-libzip=/usr/include \
+	&& \
+	docker-php-ext-configure imap --with-imap --with-imap-ssl \
+	&& \
 	docker-php-ext-install \
 		pdo_mysql pdo_sqlite mysqli \
-		mcrypt gd exif intl xsl json soap dom zip opcache && \
+		imap mcrypt gd exif intl xsl json soap dom zip opcache && \
 	pecl install xdebug && \
 	docker-php-source delete && \
 	apk del .build-deps
