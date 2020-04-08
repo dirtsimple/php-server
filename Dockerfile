@@ -39,8 +39,8 @@ RUN apk --no-cache add \
 	docker-php-ext-configure imap --with-imap --with-imap-ssl \
 	&& \
 	docker-php-ext-install \
-		pdo_mysql pdo_sqlite mysqli \
-		imap mcrypt gd exif intl xsl json soap dom zip opcache && \
+		pdo_mysql mysqli \
+		imap mcrypt gd exif intl xsl soap zip opcache && \
 	pecl install xdebug && \
 	docker-php-source delete && \
 	apk del .build-deps
