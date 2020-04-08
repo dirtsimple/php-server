@@ -276,4 +276,6 @@ The `latest` tag will match the highest-numbered exact revision, while `unstable
 | 1.4.x         | N/A                                                          | 7.1.33 | 1.14.2 | 0.10.15 | 3.9    |
 | 7.1.33-1.4.x  | N/A                                                          | 7.1.33 | 1.14.2 | 0.10.15 | 3.9    |
 | 7.2.26-1.4.x  | N/A                                                          | 7.2.26 | 1.14.2 | 0.10.15 | 3.9    |
+| 7.2.29-2.0.x  | N/A                                                          | 7.2.29 | 1.16.2 | 0.10.15 | 3.10   |
 
+(Note: The 2.x version bump for 7.2.29  is due to the switch from alpine 3.9 to 3.10: if you're building complex things on top of this image, the base OS often matters quite a bit.)
