@@ -2,7 +2,7 @@
 
 FROM jwilder/dockerize:0.6.0 AS dockerize
 FROM bashitup/alpine-tools:latest AS tools
-FROM php:7.1.33-fpm-alpine3.9
+FROM php:7.2.26-fpm-alpine3.9
 
 COPY --from=dockerize /usr/local/bin/dockerize /usr/bin/
 
@@ -40,8 +40,9 @@ RUN apk --no-cache add \
 	&& \
 	docker-php-ext-install \
 		pdo_mysql mysqli \
-		imap mcrypt gd exif intl xsl soap zip opcache && \
-	pecl install xdebug && \
+		imap gd exif intl xsl soap zip opcache && \
+	pecl install xdebug mcrypt-1.0.3 && \
+	docker-php-ext-enable mcrypt && \
 	docker-php-source delete && \
 	apk del .build-deps
 

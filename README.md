@@ -259,9 +259,21 @@ Please note that the modd process runs as **root**, which means that your config
 
 ### Version Info
 
-| Tags          | Upstream Version                                                  | PHP    | nginx  | mod lua | alpine |
-| ------------- | ----------------------------------------------------------------- | ------ | ------ | ------- | ------ |
+Builds of this image are tagged with multiple aliases to make it easy to pin specific revisions or to float by PHP version.  For example, a PHP 7.1.33 image with revision 1.4.6 of this container could be accessed via any of the following tags:
+
+* `7.1`, `7.1.33` - PHP version, with or without minor release, any container revision
+* `7.1-1.x`, `7.1.33-1.x` -- PHP version plus container major revision
+* `7.1.33-1.4.6 -- an exact revision of both PHP and the container
+
+The `latest` tag will match the highest-numbered exact revision, while `unstable` tracks the `master` branch during development.
+
+#### Version History
+
+| Tags          | Upstream Version                                             | PHP    | nginx  | mod lua | alpine |
+| ------------- | ------------------------------------------------------------ | ------ | ------ | ------- | ------ |
 | 1.0.x - 1.3.x | [1.3.10](https://gitlab.com/ric_harvey/nginx-php-fpm/tree/1.3.10) | 7.1.12 | 1.13.7 | 0.10.11 | 3.6    |
-| 1.4.0         | N/A                                                               | 7.1.32 | 1.14.2 | 0.10.15 | 3.9    |
-| 1.4.x         | N/A                                                               | 7.1.33 | 1.14.2 | 0.10.15 | 3.9    |
+| 1.4.0         | N/A                                                          | 7.1.32 | 1.14.2 | 0.10.15 | 3.9    |
+| 1.4.x         | N/A                                                          | 7.1.33 | 1.14.2 | 0.10.15 | 3.9    |
+| 7.1.33-1.4.x  | N/A                                                          | 7.1.33 | 1.14.2 | 0.10.15 | 3.9    |
+| 7.2.26-1.4.x  | N/A                                                          | 7.2.26 | 1.14.2 | 0.10.15 | 3.9    |
 
