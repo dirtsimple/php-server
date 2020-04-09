@@ -1,0 +1,12 @@
+#!/bin/bash
+
+case $DOCKER_TAG in
+	7.1.*|7.2.26) PHP_VER=${DOCKER_TAG%%-*}; OS_VER=3.9;;
+	7.*)          PHP_VER=${DOCKER_TAG%%-*}; OS_VER=3.10;;
+esac
+
+docker build ${PHP_VER+ --build-arg PHP_VER=$PHP_VER}${OS_VER+ --build-arg OS_VER=$OS_VER} -f "$DOCKERFILE_PATH" -t "$IMAGE_NAME" .
+
+for tag in ${DOCKER_TAG//,/ }; do
+	[[ $tag == "${IMAGE_NAME/##*:}" ]] || docker tag "$IMAGE_NAME" "${IMAGE_NAME%%:*}:$tag"
+done
