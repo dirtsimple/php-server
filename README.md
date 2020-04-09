@@ -163,6 +163,8 @@ If you want extreme backward compatibility with the default settings of `richarv
 * `NGINX_READABLE=.` and `NGINX_WRITABLE=.`, to make the entire codebase readable and writable by nginx+php (which is much less secure)
 * `NGINX_WORKERS=auto`
 * `PHP_LOG_ERRORS=false`
+* `EXTRA_EXTS=pgsql pdo_pgsql redis xsl soap xdebug` (if you need any of these extensions)
+* `EXTRA_APKS=nginx-mod-http-geoip nginx-mod-stream-geoip` (if you need nginx geoip modules)
 
 The following features of `richarvey/nginx-php-fpm` are not directly supported by this image, and must be configured in a different way:
 
@@ -213,9 +215,8 @@ services:
     build:
       context: https://github.com/dirtsimple/php-server.git
       args:
-        - EXTRA_APKS=ghostscript graphviz aspell-dev libmemcached-dev cyrus-sasl-dev openldap-dev
-        - EXTRA_EXTS=xmlrpc pspell ldap
-        - EXTRA_PECL=memcached
+        - EXTRA_APKS=ghostscript graphviz
+        - EXTRA_EXTS=xmlrpc pspell ldap memcached
     environment:
       - GIT_REPO=https://github.com/moodle/moodle.git
       - GIT_BRANCH=MOODLE_33_STABLE
@@ -226,6 +227,8 @@ services:
 For performance's sake, it's generally better to specify extras at build-time, but as a development convenience you can also pass them to the container as environment variables to be installed or built during container startup.  (Which, of course, will be slower as a result.)
 
 Specific versions of a PECL module can be forced by using a `:`, e.g. `EXTRA_PECL=mcrypt:1.0.2`.  (A `:` is used in place of a `-` so that the version can be stripped from the extension name in generated PHP .ini file(s).)
+
+As of the 2.x versions of this image, `EXTRA_EXTS` are built using [mlocati/docker-php-extension-installer](https://github.com/mlocati/docker-php-extension-installer/), so you no longer need to specify `EXTRA_APKS` for any of the extensions it supports, and you can build supported PECL extensions using `EXTRA_EXTS`, without needing `EXTRA_PECL`, unless you need to specify a particular module version, or need an extension that isn't supported by docker-php-extension-installer.  (But in such cases, you must explicitly list any needed packages in `EXTRA_APKS`, since the automatic installer won't be handling it for you.)
 
 ### Supervised Tasks
 
@@ -259,23 +262,27 @@ Please note that the modd process runs as **root**, which means that your config
 
 ### Version Info
 
-Builds of this image are tagged with multiple aliases to make it easy to pin specific revisions or to float by PHP version.  For example, a PHP 7.1.33 image with revision 1.4.6 of this container could be accessed via any of the following tags:
+Builds of this image are tagged with multiple aliases to make it easy to pin specific revisions or to float by PHP version.  For example, a PHP 7.1.33 image with release 1.4.6 of this container could be accessed via any of the following tags:
 
-* `7.1`, `7.1.33` - PHP version, with or without minor release, any container revision
-* `7.1-1.x`, `7.1.33-1.x` -- PHP version plus container major revision
-* `7.1.33-1.4.6 -- an exact revision of both PHP and the container
+* `7.1`, `7.1.33` - PHP version, with or without minor version, latest container release
+* `7.1-1.x`, `7.1.33-1.x` -- PHP version plus container major release
+* `7.1.33-1.4.6` -- an exact PHP revision and container release
 
-The `latest` tag will match the highest-numbered exact revision, while `unstable` tracks the `master` branch during development.
+The `unstable` tag tracks the `master` branch during development, with the highest PHP version currently in test.
 
 #### Version History
 
-| Tags          | Upstream Version                                             | PHP    | nginx  | mod lua | alpine |
-| ------------- | ------------------------------------------------------------ | ------ | ------ | ------- | ------ |
-| 1.0.x - 1.3.x | [1.3.10](https://gitlab.com/ric_harvey/nginx-php-fpm/tree/1.3.10) | 7.1.12 | 1.13.7 | 0.10.11 | 3.6    |
-| 1.4.0         | N/A                                                          | 7.1.32 | 1.14.2 | 0.10.15 | 3.9    |
-| 1.4.x         | N/A                                                          | 7.1.33 | 1.14.2 | 0.10.15 | 3.9    |
-| 7.1.33-1.4.x  | N/A                                                          | 7.1.33 | 1.14.2 | 0.10.15 | 3.9    |
-| 7.2.26-1.4.x  | N/A                                                          | 7.2.26 | 1.14.2 | 0.10.15 | 3.9    |
-| 7.2.29-2.0.x  | N/A                                                          | 7.2.29 | 1.16.2 | 0.10.15 | 3.10   |
+| Tags          | PHP    | nginx  | mod lua | alpine | Notes |
+| ------------- | ------ | ------ | ------- | ------ | ----- |
+| 7.2.29-2.0.x  | 7.2.29 | 1.16.2 | 0.10.15 | 3.10   | New extension build method for all 7.x-2.x versions |
+| 7.2.26-2.0.x  | 7.2.26 | 1.14.2 | 0.10.15 | 3.9    ||
+| 7.1.33-2.0.x  | 7.1.33 | 1.14.2 | 0.10.15 | 3.9    ||
+|  |  |  |  |  | &nbsp; |
+| 7.2.26-1.4.x  | 7.2.26 | 1.14.2 | 0.10.15 | 3.9    | Old extension build method used from here down |
+| 7.1.33-1.4.x  | 7.1.33 | 1.14.2 | 0.10.15 | 3.9    ||
+|  |  |  |  |  | &nbsp; |
+| 1.4.x         | 7.1.33 | 1.14.2 | 0.10.15 | 3.9    ||
+| 1.4.0         | 7.1.32 | 1.14.2 | 0.10.15 | 3.9    ||
+| 1.0.x - 1.3.x | 7.1.12 | 1.13.7 | 0.10.11 | 3.6    | Based on upstream [1.3.10][ric_harvey] |
 
-(Note: The 2.x version bump for 7.2.29  is due to the switch from alpine 3.9 to 3.10: if you're building complex things on top of this image, the base OS often matters quite a bit.)
+[ric_harvey]: https://gitlab.com/ric_harvey/nginx-php-fpm/tree/1.3.10

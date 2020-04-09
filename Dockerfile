@@ -1,8 +1,10 @@
 # -------- Copy stuff from base images
+ARG PHP_VER=7.2.29
+ARG OS_VER=3.10
 
 FROM jwilder/dockerize:0.6.0 AS dockerize
 FROM bashitup/alpine-tools:latest AS tools
-FROM php:7.2.29-fpm-alpine3.10
+FROM php:$PHP_VER-fpm-alpine$OS_VER
 
 COPY --from=dockerize /usr/local/bin/dockerize /usr/bin/
 
@@ -10,6 +12,7 @@ COPY --from=tools     /bin/yaml2json        /usr/bin/
 COPY --from=tools     /bin/modd             /usr/bin/
 COPY --from=tools     /bin/jq               /usr/bin/
 
+COPY --from=mlocati/php-extension-installer /usr/bin/install-php-extensions /usr/bin/
 # -------- Add packages and build/install tools
 
 ENV LD_PRELOAD /usr/lib/preloadable_libiconv.so php
@@ -19,32 +22,10 @@ RUN apk --no-cache add \
 	&& \
 	apk --update add \
 		bash nginx nginx-mod-http-lua nginx-mod-http-lua-upstream \
-		supervisor ncurses certbot \
-		git wget curl libcurl openssh-client ca-certificates \
-		dialog libpq icu-libs imap-dev libzip \
-		libmcrypt libxslt libpng freetype libjpeg-turbo \
+		supervisor ncurses certbot git wget curl openssh-client ca-certificates \
+		dialog \
 	&& \
-    apk add --virtual .build-deps \
-		autoconf gcc make musl-dev linux-headers libffi-dev libzip-dev \
-		augeas-dev python-dev icu-dev sqlite-dev openssl-dev \
-		libmcrypt-dev libxslt-dev libpng-dev freetype-dev libjpeg-turbo-dev \
-	&& \
-	docker-php-ext-configure gd \
-		--with-gd \
-		--with-freetype-dir=/usr/include/ --with-png-dir=/usr/include/ \
-		--with-jpeg-dir=/usr/include/ \
-	&& \
-	docker-php-ext-configure zip --with-libzip=/usr/include \
-	&& \
-	docker-php-ext-configure imap --with-imap --with-imap-ssl \
-	&& \
-	docker-php-ext-install \
-		pdo_mysql mysqli \
-		imap gd exif intl xsl soap zip opcache && \
-	pecl install xdebug mcrypt-1.0.3 && \
-	docker-php-ext-enable mcrypt && \
-	docker-php-source delete && \
-	apk del .build-deps
+	install-php-extensions mcrypt pdo_mysql mysqli gd exif intl zip opcache
 
 # -------- Setup composer and runtime environment
 

@@ -7,8 +7,9 @@ uninstalled_apks() {
 }
 
 uninstalled_exts() {
-    ext_base="/usr/local/etc/php/conf.d/docker-php-ext-"
-    for ext; do [ -f "${ext_base}${ext%:*}.ini" ]  || echo $ext; done
+    local exts=($(php -m)) ext_base="/usr/local/etc/php/conf.d/docker-php-ext-"
+    shopt -s nocaseglob
+    for ext; do [[ " ${exts[*]} " == *"$ext"* || -f "${ext_base}${ext%:*}.ini" ]] || echo $ext; done
 }
 
 install_pecls() {
@@ -27,6 +28,6 @@ installs=$(uninstalled_exts $EXTRA_EXTS)
 pecls=$(   uninstalled_exts $EXTRA_PECL)
 
 if [[ "$apks"     ]]; then apk add $apks; fi
-if [[ "$installs" ]]; then docker-php-ext-install $installs; fi
+if [[ "$installs" ]]; then install-php-extensions $installs; fi
 if [[ "$pecls"    ]]; then install_pecls $pecls; fi
 
