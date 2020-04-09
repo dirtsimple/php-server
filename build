@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+
+# Run the CLI for local builds and docker hub build rules; see hooks/README.md
+# Note: you must have jqmd, jq, and a yaml2json tool, as well as curl
+
+exec jqmd hooks/README.md "$@"
+

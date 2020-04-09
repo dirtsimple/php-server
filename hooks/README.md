@@ -176,7 +176,14 @@ case ${1-} in
 		done
 		RUN_JQ .
 		;;
-	*) echo "argument required: fetch, dump, or push" >&2; exit 64 ;;
+	local)
+		multibuild() { DOCKER_TAG=$2-$3.$4,$2-$3.x,$1-$3.x,$2,$1 hooks/build; }
+		for ver in "${@:2}"; do
+			min=${ver%-*}; maj=${min%.*}; rel=${ver#*-}; rmin=${rel#*.}; rmaj=${rel%%.*}
+			multibuild "$maj" "$min" "$rmaj" "$rmin"
+		done
+		;;
+	*) echo "argument required: local, fetch, dump, or push" >&2; exit 64 ;;
 esac
 
 CLEAR_FILTERS
