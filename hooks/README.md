@@ -4,12 +4,28 @@ This directory is for controlling the build of multiple repository versions.  It
 
 When you have complex build rules, the docker hub UI is incredibly inconvenient, since you cannot edit existing build rules, the full tag/sourcename rules aren't visible, etc.  So putting them in a file like this lets them be easily edited, revision-controlled, etc.
 
-This script is not project-specific; you can target any image by changing the `image:` line to target your project, and running `fetch` to get your initial settings, and then editing the file to match them.  (See under [Implementation](#implementation), below.)
+### Build Rules
+
+For each git release tag (e.g. 2.0.0, 2.0.1, etc.), we want to build multiple PHP versions.  "Minor" versions are only accessible via an exact PHP version request, while "major" versions are also available under the major version tag variants.  So `major 7.2.26` means to tag PHP 7.2.26 under the `7.2` tag as well as under 7.2.26.   The "latest" tag is like "major", except that the version is also tagged as "latest".
+
+```shell
+build-rules() {
+	image "dirtsimple/php-server"
+
+	latest "7.1.33"
+	major  "7.2.26"
+	major  "7.3.13"
+
+	#minor  "7.2.29"  # alpine 3.10
+	#minor  "7.3.16"
+
+	#version "master" "unstable" Branch b62210f7-f252-4006-b1ad-c545d08bf969
+}
+```
 
 ### Basic Settings
 
 ```yaml
-image: dirtsimple/php-server  # image name: this is the only required setting
 envvars: []
 
 autotests: 'OFF'        # 'OFF', 'SOURCE_ONLY', or 'SOURCE_AND_FORKS'
@@ -32,83 +48,29 @@ repo_links: false       # boolean true or false; true equals "enable for base im
 
 Each entry under `build_settings` describes a build rule.  Note that UUIDs are optional, but should not be copied from one project or rule to another.
 
-For convenience in specifying the rules, we'll define some variables first:
+For convenience in specifying the rules, we'll define some functions:
 
 ```shell
-# Pattern matches
-dot='[.]'
-num='[0-9]+'
-tail="$dot[0-9.]+"
-release="($num)$tail"
-export match="($tail)?-$release"
+latest(){ major   "$1" "${2:+$2,}latest" "${@:3}"; }
+major(){  minor   "$1" "${2:+$2,}${1%.*},${1%.*}-{sourceref},${1%.*}-{\\1}.x" "${@:3}"; }
+minor(){  version "([0-9]+)\\.[0-9.]+" "$1-{sourceref},$1-{\\1}.x${2:+,$2}" Tag "${@:3}"; }
 
-# Tag interpolation
-export major='{\1}'
-export minor='{\1}{\2}'
-export majorx="$major-{\3}.x"
-export minorx="$minor-{\3}.x"
-export all="{sourceref},$major,$minor,$majorx,$minorx"
+version() {
+	local t='jqmd_data({
+		build_settings: [{
+			source_type: "\($kind)",
+			source_name: "/^\($match)$/",
+			tag: "\($build)",
+			autobuild: true,
+			build_context: "/",
+			dockerfile: "Dockerfile",
+			nocache: false,
+			"uuid":"\($uuid)"
+		}]
+	})'
+	APPLY "$t" match="$1" build="$2" kind="${3:-Tag}" uuid="${4-}"
+}
 ```
-
-
-
-```yaml
-build_settings:
-
-  # Treat 7.1 tags as 'latest'
-  - source_type:   Tag
-    source_name:   "/^(7.1)\\(env.match)$/"
-    tag:           "\\(env.all),latest"
-    build_context: /
-    dockerfile:    Dockerfile
-    autobuild:     true
-    nocache:       false
-    uuid:          e023fa4f-1a9d-48ba-bb96-65a999709273
-
-  # Build 7.2+ according to pattern
-  - source_type:   Tag
-    source_name:   "/^(7.[2-4])\\(env.match)$/"
-    tag:           "\\(env.all)"
-    build_context: /
-    dockerfile:    Dockerfile
-    autobuild:     true
-    nocache:       false
-    uuid:          4a4f8d0c-a522-4dc8-a7b4-ce5f876f39b6
-
-  # master is unstable
-  - source_type:   Branch
-    source_name:   "master"
-    tag:           "unstable"
-    autobuild:     true
-    nocache:       false
-    build_context: /
-    dockerfile:    Dockerfile
-    uuid:          b62210f7-f252-4006-b1ad-c545d08bf969
-
-```
-
-Legacy builds (not included in push):
-
-~~~yaml
-build_settings:
-  # Fixed version from master
-  - source_type: Branch
-    source_name: "master"
-    tag:         "latest"
-    dockerfile:  /
-    autobuild:   false
-    nocache:     true
-    uuid:        3361111d-cbc9-4265-b626-861ffd552df0
-
-  # Any tag - disabled
-  - source_type: Tag
-    source_name: "/.*/"
-    tag:         "{sourceref}"
-    autobuild:   false
-    nocache:     true
-    dockerfile:  /
-    uuid:        e958e00e-88c1-41e2-ac37-2cab6a75ee33
-~~~
 
 ### Implementation
 
@@ -132,6 +94,8 @@ This will output your existing settings in JSON to use as a starting point for y
 Here's the actual runtime code:
 
 ```shell
+image() { IMAGE=$1; }
+
 hub() { curl -s "${@:2}" https://hub.docker.com"$1"; }
 json() { "$@" -H "Content-Type: application/json" -d @-; }
 post() { "$@" -X POST; }
@@ -148,7 +112,6 @@ login() {
 }
 
 find-image() {
-	[[ $IMAGE ]]  || IMAGE=$(RUN_JQ -r .image)
 	[[ $SOURCE ]] || SOURCE=$(raw .objects[].resource_uri hub "/api/build/v1/source/?image=$IMAGE")
 }
 
@@ -158,9 +121,14 @@ find-image() {
 } >&2
 
 JQ_OPTS -n  # generating, not filtering
+build-rules
+
+[[ $IMAGE ]]  || {
+	echo '`image` must be defined in build-rules' >&2; exit 64
+}
 
 case ${1-} in
-	push) RUN_JQ 'del(.image)' | patch json auth config | jq . ;;
+	push) RUN_JQ . | patch json auth config | jq . ;;
 	dump) RUN_JQ . ;;  # dump current settings as JSON
 	fetch)
 		# fetch existing settings and dump them to the console
@@ -168,7 +136,7 @@ case ${1-} in
 		builds=$(RUN_JQ -r .build_settings[])
 
 		# Remove build_settings and things you can't change via PATCH
-		FILTER 'del(.build_settings, .deploykey, .provider, .resource_uri, .state, .uuid)'
+		FILTER 'del(.build_settings, .deploykey, .image, .provider, .resource_uri, .state, .uuid)'
 		for setting in $builds; do
 			JSON '{build_settings:[('"
 				$(auth hub "$setting")

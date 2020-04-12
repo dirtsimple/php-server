@@ -3,7 +3,7 @@
 IMAGE_NAME=${IMAGE_NAME-dirtsimple/php-server:${DOCKER_TAG%%,*}}
 
 case $DOCKER_TAG in
-	7.1.*|7.2.26|7.3.13)
+	7.1.*|7.2.26-*|7.3.13-*)
 		PHP_VER=${DOCKER_TAG%%-*}; OS_VER=3.9;;
 	7.*)
 		PHP_VER=${DOCKER_TAG%%-*}; OS_VER=3.10;;

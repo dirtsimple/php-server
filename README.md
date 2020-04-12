@@ -215,6 +215,8 @@ services:
     build:
       context: https://github.com/dirtsimple/php-server.git
       args:
+        - PHP_VER=7.2  # build from php:7.2-fpm-alpine3.10
+        - OS_VER=3.10
         - EXTRA_APKS=ghostscript graphviz
         - EXTRA_EXTS=xmlrpc pspell ldap memcached
     environment:
@@ -268,15 +270,13 @@ Builds of this image are tagged with multiple aliases to make it easy to pin spe
 * `7.1-1.x`, `7.1.33-1.x` -- PHP version plus container major release
 * `7.1.33-1.4.6` -- an exact PHP revision and container release
 
-The `unstable` tag tracks the `master` branch during development, with the highest PHP version currently in test.
-
 #### Version History
 
 | Tags          | PHP    | nginx  | mod lua | alpine | Notes |
 | ------------- | ------ | ------ | ------- | ------ | ----- |
-| 7.2.29-2.0.x  | 7.2.29 | 1.16.2 | 0.10.15 | 3.10   | New extension build method for all 7.x-2.x versions |
-| 7.2.26-2.0.x  | 7.2.26 | 1.14.2 | 0.10.15 | 3.9    ||
-| 7.1.33-2.0.x  | 7.1.33 | 1.14.2 | 0.10.15 | 3.9    ||
+| 7.3-2.0.x | 7.3.13 | 1.14.2 | 0.10.15 | 3.9  | New extension build method for all 7.x-2.x versions |
+| 7.2-2.0.x  | 7.2.26 | 1.14.2 | 0.10.15 | 3.9    ||
+| 7.1-2.0.x | 7.1.33 | 1.14.2 | 0.10.15 | 3.9    |`latest` tag currently tracks 7.1|
 |  |  |  |  |  | &nbsp; |
 | 7.2.26-1.4.x  | 7.2.26 | 1.14.2 | 0.10.15 | 3.9    | Old extension build method used from here down |
 | 7.1.33-1.4.x  | 7.1.33 | 1.14.2 | 0.10.15 | 3.9    ||
