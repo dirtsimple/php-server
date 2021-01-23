@@ -169,6 +169,12 @@ exec-supervisord() {
         reject-nginx-writable "$MODD_CONF" "modd config"
     ) || exit $?
 
+    # don't start if webhook config is webserver-writable
+    [[ ! $WEBHOOK_CONF ]] || (
+        cd "${WEBHOOK_DIR-$CODE_BASE}"
+        reject-nginx-writable "$WEBHOOK_CONF" "webhook config"
+    ) || exit $?
+
     # Start supervisord and services
     exec /usr/bin/supervisord -n -c /etc/supervisord.conf
 }

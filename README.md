@@ -5,7 +5,7 @@
 This is a docker image for an alpine nginx + php-fpm combo container, with support for:
 
 * Cloning a git repo at container start (and running `composer install` if applicable)
-* Running scheduled jobs (cron), on-file-change jobs ([modd](https://github.com/cortesi/modd)), or other supervisord-controlled tasks
+* Running scheduled jobs (cron), on-file-change jobs ([cortesi/modd](https://github.com/cortesi/modd)), webhooks ([adnanh/webhook](#webhooks-adnanhwebhook)), or other supervisord-controlled tasks
 * Build arguments to allow adding extra packages and PHP extensions
 * Environment-based templating of any configuration file in the container at startup
 * Running any user-supplied startup scripts
@@ -52,6 +52,7 @@ Note: there are a few configuration options that must be specified in a differen
 - [Supervised Tasks](#supervised-tasks)
   * [Scheduled Jobs (cron)](#scheduled-jobs-cron)
   * [Changed-File Jobs (modd)](#changed-file-jobs-modd)
+  * [Webhooks (adnanh/webhook)](#webhooks-adnanhwebhook)
 - [Version Info](#version-info)
 
 <!-- tocstop -->
@@ -126,6 +127,7 @@ This image generates and uses the following configuration files in `/etc/nginx`,
 
 * `app.conf` -- the main app configuration for running PHP and serving files under the document root.  In general, if you need to change your nginx configuration, this is the first place to look.  Its contents are included *inside* of the `server {}` blocks for both the http and https servers, so they can both be configured from one file.
 * `*.app.conf` -- any files named with this pattern are loaded immediately after `app.conf`; by adding files named this way, you can extend the base configuration without needing to copy the default `app.conf`.
+* `webhooks.app.conf` -- proxy configuration for the [webhooks tool](#webhooks-adnanhwebhook); you can override this to customize webhook routing or add extra authorization requirements for connections coming from outside the container.
 * `static.conf` -- configuration for static files.  This is included in `app.conf` under any `EXCLUDE_PHP` locations.  With the exception of `expires`, any settings here should be wrapped in location sub-blocks.  The default version of this file includes settings for nginx's mp4 and flv modules, linked to the appropriate file types.
 * `http.conf` -- extra configuration for the `http {}` block, empty by default.  (Use this to define maps, caches, additional servers, etc.)
 * `nginx.conf` -- the main server configuration, with an `http` block that includes `http.conf` and any server configs listed in the `sites-enabled/` subdirectory
@@ -240,6 +242,8 @@ Any files named `/etc/supervisor.d/*.ini` are included as part of the supervisor
 * `php-fpm.ini`
 * `certbot.ini` -- run registration or renewal if `LETS_ENCRYPT` and `DOMAIN` are set
 * `cron.ini` -- run crond if `USE_CRON=true`
+* `modd.ini` -- run modd (file watcher) if `MODD_CONF` is set
+* `webhook.ini` - run webhooks if `WEBHOOK_CONF` is set
 
 You can override any of these with an empty file to disable the relevant functionality.
 
@@ -262,6 +266,32 @@ You can also use `MODD_OPTIONS` to supply extra global options to modd, and `MOD
 
 Please note that the modd process runs as **root**, which means that your config file must *not* be writable by nginx (or else the container will not start).  This also means you should preface most commands in your modd config file with `as-developer` or `as-nginx` to set the appropriate user ID for the task in question.  But if you need a modd job to stop or start other tasks, you can have it simply invoke `supervisorctl` with the appropriate options.
 
+#### Webhooks (adnanh/webhook)
+
+The bundled webhook tool optionally lets you run commands in the container upon receiving webhooks.  These variables control where, how, and whether the webhooks are served:
+
+* `WEBHOOK_CONF` -- the name of a JSON or YAML file with the webhooks' configuration.  If not set, webhooks are disabled.  The path can be relative or absolute; a relative path is interpreted relative to `WEBHOOK_DIR`
+* `WEBHOOK_USER` -- the name of the user the webhook tool will run as; defaults to `nginx`
+* `WEBHOOK_DIR` -- the directory in which the webhook tool runs; defaults to `$CODE_BASE` if not set.
+* `WEBHOOK_PATH` -- the path under your site's root URL at which webhooks will be accessed.  Defaults to `hooks`, meaning that a webhook with id `foo` will be reachable via nginx at `/hooks/foo`.
+* `WEBHOOK_OPTS` -- additional startup arguments to pass to the webhook tool; defaults to `-hotreload -verbose`.
+
+The webhook tool is proxied by nginx, so its port does not need to be directly exposed, and so it listens only on 127.0.0.1:9000.  If you have something else you need to run on port 9000 (and you also want to run webhooks), you can change the default port with `WEBHOOK_PORT`.
+
+##### Security Considerations
+
+To prevent privilege escalation from web-served PHP, the webhook tool's configuration file **must not** be writable by nginx (or else the container won't start).
+
+The default `WEBHOOK_USER` is `nginx`, meaning the webhooks can't do anything that nginx or web-served PHP can't.  If your webhooks need greater privileges than that, you can configure the tool to run as `developer` (if code needs to be updated), or `root` (if process control via `supervisorctl` is needed).
+
+Note, however, that this tool is very powerful, and it is ridiculously easy to accidentally create vulnerabilities, especially if you use the `developer` or `root` user.  For example, if your configuration file contains secrets (e.g. to verify a webhook is authorized), then you need to ensure it can't be *read* by the web server or php, not just written!  (Otherwise, a PHP-level exploit can find out the secret, even if the file is not located in the container's `PUBLIC_DIR`.)  Likewise, if a webhook doesn't have some sort of authorization check as part of its configuration, then **any program run inside the container** can invoke it by talking directly to port 9000.  (Again allowing access by an exploited PHP process.)
+
+Therefore, if a command can have detrimental effects (or if it merely accepts any input whatsoever!), it should probably be protected with some form of authorization check (such as request signatures or an authorization key field).  Alternately, the command being run can perform the check, again with the caveat that such scripts should not be readable or writable by nginx or php.  You may also need some form of concurrency protection (if webhooks arrive at the same time) and/or rate-limiting (to avoid denial of service or similar issues).
+
+(In addition, if you're using `root` to run the webhook tool, you should also ensure webhooks that do not need root access downgrade their privileges with `as-developer` or `as-nginx` accordingly.)
+
+In short, using this feature may require careful design consideration, as it can easily poke holes in the "defense in depth" architecture this container works so hard to create.  (Especially with a non-default `WEBHOOK_USER`.)
+
 ### Version Info
 
 Builds of this image are tagged with multiple aliases to make it easy to pin specific revisions or to float by PHP version.  For example, a PHP 7.1.33 image with release 1.4.6 of this container could be accessed via any of the following tags:
@@ -270,7 +300,7 @@ Builds of this image are tagged with multiple aliases to make it easy to pin spe
 * `7.1-1.x`, `7.1.33-1.x` -- PHP version plus container major release
 * `7.1.33-1.4.6` -- an exact PHP revision and container release
 
-#### Version History
+##### Version History
 
 | Tags          | PHP    | nginx  | mod lua | alpine | Notes |
 | ------------- | ------ | ------ | ------- | ------ | ----- |

@@ -32,12 +32,17 @@ ENV CODE_BASE /var/www/html
 ENV GIT_SSH /usr/bin/git-ssh
 ENV COMPOSER_OPTIONS --no-dev
 
+ENV WEBHOOK_PATH hooks
+ENV WEBHOOK_PORT 9000
+ENV WEBHOOK_USER nginx
+ENV WEBHOOK_OPTS "-hotreload -verbose"
+
 VOLUME /etc/letsencrypt
 EXPOSE 443 80
 CMD ["/usr/bin/start-container"]
 
 COPY --from=bashitup/alpine-tools:latest \
-     /bin/dockerize /bin/yaml2json /bin/modd /bin/jq /usr/bin/
+     /bin/dockerize /bin/yaml2json /bin/modd /bin/jq /bin/webhook /usr/bin/
 COPY scripts/install-extras scripts/composer-global /usr/bin/
 
 ARG EXTRA_APKS
