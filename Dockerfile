@@ -20,7 +20,7 @@ RUN apk --no-cache add \
 
 # -------- Setup composer and runtime environment
 
-ADD https://getcomposer.org/download/1.10.1/composer.phar /usr/bin/composer
+ADD https://getcomposer.org/download/1.10.22/composer.phar /usr/bin/composer
 RUN chmod ugo+rx /usr/bin/composer && \
     chmod ugo+r /etc/supervisord.conf && \
 	mkdir -p /run/nginx /etc/nginx/sites-enabled && \
