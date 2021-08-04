@@ -56,10 +56,7 @@ jobs:
         with:
           context: .
           push: true
-          tags: |
-            ${{steps.meta.outputs.tags }}
-            ${{ matrix.php }}
-            ${{ steps.phpver.outputs.version }}
+          tags: ${{ steps.meta.outputs.tags }}
           build-args: |
             PHP_VER=${{ matrix.php }}
             OS_VER=${{ matrix.os }}
