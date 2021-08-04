@@ -12,6 +12,10 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v2
 
+      - name: Trim README
+        run: |
+          sed -i -e 's~(#~(https://github.com/dirtsimple/php-server/#~; /tocstop/,/^#\+ Version Info/{/^#\+ Version Info/!d}' README.md
+
       - name: Update repo description
         uses: peter-evans/dockerhub-description@v2
         with:
