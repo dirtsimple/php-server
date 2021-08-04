@@ -1,0 +1,72 @@
+name: Build and Push to Docker Hub
+
+on:
+  push:
+    tags: [ "*" ]
+
+jobs:
+  docker:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - { php: "7.1.33", os: "3.9" }
+          - { php: "7.2.26", os: "3.9" }
+          - { php: "7.3.13", os: "3.9" }
+
+    steps:
+      # Use metadata action to get `major.minor` PHP version
+      - name: Get base PHP Version
+        id: phpver
+        uses: docker/metadata-action@v3
+        with:
+          images: ${{ github.repository }}
+          flavor: 'latest=false'
+          tags: 'type=semver,pattern={{major}}.{{minor}},value=${{ matrix.php }}'
+
+      # Compute tags for our patch version to go with
+      - name: Calculate Tags
+        id: meta
+        uses: docker/metadata-action@v3
+        with:
+          images: ${{ github.repository }}
+          flavor: 'latest=false'
+          tags: |
+            type=semver,pattern=${{ matrix.php }}-{{version}}
+            type=semver,pattern=${{ matrix.php }}-{{major}}.{{minor}}.x
+            type=semver,pattern=${{ matrix.php }}-{{major}}.x
+            type=raw,value=${{ matrix.php }}
+            type=semver,pattern=${{ steps.phpver.outputs.version }}-{{version}}
+            type=semver,pattern=${{ steps.phpver.outputs.version }}-{{major}}.{{minor}}.x
+            type=semver,pattern=${{ steps.phpver.outputs.version }}-{{major}}.x
+            type=raw,value=${{ steps.phpver.outputs.version }}
+
+      - name: Login to DockerHub
+        uses: docker/login-action@v1
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Build and push
+        id: build
+        uses: docker/build-push-action@v2
+        with:
+          context: .
+          push: true
+          tags: |
+            ${{steps.meta.outputs.tags }}
+            ${{ matrix.php }}
+            ${{ steps.phpver.outputs.version }}
+          build-args: |
+            PHP_VER=${{ matrix.php }}
+            OS_VER=${{ matrix.os }}
+
+      - name: Update repo description
+        uses: peter-evans/dockerhub-description@v2
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_PASSWORD }}
+          repository: ${{ github.repository }}
