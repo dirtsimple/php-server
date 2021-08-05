@@ -1,11 +1,11 @@
 # -------- Copy stuff from base images
-ARG PHP_VER=7.2.29
-ARG OS_VER=3.10
+ARG PHP_VER=8.0.7
+ARG OS_VER=3.12
 FROM php:$PHP_VER-fpm-alpine$OS_VER
 
 # -------- Add packages and build/install tools
 
-COPY --from=mlocati/php-extension-installer /usr/bin/install-php-extensions /usr/bin/
+COPY --from=mlocati/php-extension-installer:1.2.50 /usr/bin/install-php-extensions /usr/bin/
 ENV LD_PRELOAD /usr/lib/preloadable_libiconv.so php
 RUN apk --no-cache add \
 		--repository http://dl-3.alpinelinux.org/alpine/edge/community \
@@ -20,7 +20,7 @@ RUN apk --no-cache add \
 
 # -------- Setup composer and runtime environment
 
-ADD https://getcomposer.org/download/1.10.22/composer.phar /usr/bin/composer
+ADD https://getcomposer.org/download/2.1.5/composer.phar /usr/bin/composer
 RUN chmod ugo+rx /usr/bin/composer && \
     chmod ugo+r /etc/supervisord.conf && \
 	mkdir -p /run/nginx /etc/nginx/sites-enabled && \
@@ -30,7 +30,7 @@ RUN chmod ugo+rx /usr/bin/composer && \
 
 ENV CODE_BASE /var/www/html
 ENV GIT_SSH /usr/bin/git-ssh
-ENV COMPOSER_OPTIONS --no-dev
+ENV COMPOSER_OPTIONS --no-dev --optimize-autoloader
 
 ENV WEBHOOK_PATH hooks
 ENV WEBHOOK_PORT 9000
@@ -50,7 +50,7 @@ ARG EXTRA_EXTS
 ARG EXTRA_PECL
 RUN /usr/bin/install-extras
 
-ARG GLOBAL_REQUIRE=hirak/prestissimo:^0.3.7
+ARG GLOBAL_REQUIRE=
 ENV COMPOSER_HOME /composer
 RUN { [[ -z "$GLOBAL_REQUIRE" ]] || composer-global $GLOBAL_REQUIRE; } \
     && mkdir -p /var/www/html \

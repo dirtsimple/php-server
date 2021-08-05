@@ -93,9 +93,9 @@ When running a command under `as-developer`, the `PATH` is expanded to include `
 
 Setting the `GLOBAL_REQUIRE` environment variable to a series of package specifiers causes them to be installed globally, just after templates are processed and before the project-level composer install.  For example setting  `GLOBAL_REQUIRE` to `"psy/psysh wp-cli/wp-cli"`  would install both Psysh and the Wordpress command line tools as part of the container.
 
-You can also use `GLOBAL_REQUIRE` as a build-time argument, to specify packages to be built into the container.  The default value of this argument  is "`hirak/prestissimo:^0.3.7`", which enables fast parallel installs for composer.  If you set `GLOBAL_REQUIRE` as a build argument yourself, you'll need to include that value if you want to keep using parallel installs.  Alternately, you can set the `GLOBAL_REQUIRE` build argument to an empty string to disable parallel installs in the built container.
+(You can also use `GLOBAL_REQUIRE` as a build-time argument, to specify packages to be built into the container.)
 
-The `COMPOSER_OPTIONS` variable can also be set to change the command line options used by the default `composer install` run.  It defaults to `--no-dev`, but can be set to an empty string for a development environment.  If you need finer control over the installation process, you can also disable automatic installation by setting `SKIP_COMPOSER=true`, and then running your own installation scripts with `RUN_SCRIPTS` (which are run right after the composer-install step.
+The `COMPOSER_OPTIONS` variable can also be set to change the command line options used by the default `composer install` run.  It defaults to `--no-dev --optimize-autoloader`, but can be set to an empty string for a development environment.  If you need finer control over the installation process, you can also disable automatic installation by setting `SKIP_COMPOSER=true`, and then running your own installation scripts with `RUN_SCRIPTS` (which are run right after the composer-install step.
 
 Last but not least, you can set `COMPOSER_CONFIG_JSON` to a string of JSON to be placed in `$COMPOSER_HOME/config.json`.  This can be useful for adding site-specific repository or authentication information to a project's `composer.json`.  (New in version 1.2)
 
@@ -292,21 +292,43 @@ Therefore, if a command can have detrimental effects (or if it merely accepts an
 
 In short, using this feature may require careful design consideration, as it can easily poke holes in the "defense in depth" architecture this container works so hard to create.  (Especially with a non-default `WEBHOOK_USER`.)
 
-### Version Info
+## Version Info
 
-Builds of this image are tagged with multiple aliases to make it easy to pin specific revisions or to float by PHP version.  For example, a PHP 7.1.33 image with release 1.4.6 of this container could be accessed via any of the following tags:
+Builds of this image are tagged with multiple aliases to make it easy to pin specific revisions or to float by PHP version.  For example, a PHP 7.3.13 image with release 2.1.1 of this container could be accessed via any of the following tags (if  2.1.1 were the latest release of this image):
 
-* `7.1`, `7.1.33` - PHP version, with or without minor version, latest container release
-* `7.1-1.x`, `7.1.33-1.x` -- PHP version plus container major release
-* `7.1.33-1.4.6` -- an exact PHP revision and container release
+* `7.3`
+* `7.3-2.x`
+* `7.3-2.1.x`
+* `7.3-2.1.1`
+* `7.3.13`
+* `7.3.13-2.x`
+* `7.3.13-2.1.x`
+* `7.3.13-2.1.1`
 
-##### Version History
+Note that there is **no** `latest` tag for this image; you must explicitly select at least a PHP version such as `7.3` to get the latest version of this image for that PHP version.
+
+Also note that although you *can* just specify a PHP version, major releases of this container may be incompatble with older releases due to e.g. changes in OS versions or other factors, so you should probably at least target a specific major release of this container, e.g. `7.3-2.x` or `7.4-3.x`.
+
+### Major Versions
+
+* 3.x - Alpine 3.12, Composer 2, PHP 7.1 through 8.0, dropped prestissimo from default `GLOBAL_REQUIRE`, added `--optimize-autoloader` to default `COMPOSER_OPTIONS`
+* 2.x - Alpine 3.9, Composer 1, PHP 7.1 through 7.3, build extensions using [mlocati/docker-php-extension-installer](https://github.com/mlocati/docker-php-extension-installer)
+* 1.4.x - Alpine 3.9, Composer 1, PHP 7.1 and 7.2, image based on Docker php-fpm-alpine, scripted extension builds
+* 1.3.x and older - Alpine 3.6, PHP 7.1 only,  implemented as an overlay on the nginx-php-fpm image
+
+### Version Details
 
 | Tags          | PHP    | nginx  | mod lua | alpine | Notes |
 | ------------- | ------ | ------ | ------- | ------ | ----- |
-| 7.3-2.0.x | 7.3.13 | 1.14.2 | 0.10.15 | 3.9  | New extension build method for all 7.x-2.x versions |
-| 7.2-2.0.x  | 7.2.26 | 1.14.2 | 0.10.15 | 3.9    ||
-| 7.1-2.0.x | 7.1.33 | 1.14.2 | 0.10.15 | 3.9    |`latest` tag currently tracks 7.1|
+| 8.0-3.0.x | 8.0.7 | 1.18.0 | 0.10.15 | 3.12     |Composer 2|
+| 7.4-3.0.x | 7.4.20 | 1.18.0 | 0.10.15 | 3.12     ||
+| 7.3-3.0.x | 7.3.28 | 1.18.0 | 0.10.15 | 3.12     ||
+| 7.2-3.0.x | 7.2.34 | 1.18.0 | 0.10.15 | 3.12    ||
+| 7.1-3.0.x | 7.1.33 | 1.16.1 | 0.10.15 | 3.10    ||
+|  |  |  |  |  | &nbsp; |
+| 7.3-2.x | 7.3.13 | 1.14.2 | 0.10.15 | 3.9  | New extension build method for all 7.x-2.x versions |
+| 7.2-2.x  | 7.2.26 | 1.14.2 | 0.10.15 | 3.9    ||
+| 7.1-2.x | 7.1.33 | 1.14.2 | 0.10.15 | 3.9    ||
 |  |  |  |  |  | &nbsp; |
 | 7.2.26-1.4.x  | 7.2.26 | 1.14.2 | 0.10.15 | 3.9    | Old extension build method used from here down |
 | 7.1.33-1.4.x  | 7.1.33 | 1.14.2 | 0.10.15 | 3.9    ||
