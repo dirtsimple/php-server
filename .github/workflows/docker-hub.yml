@@ -12,9 +12,9 @@ jobs:
         include:
           - { php: "7.1.33", os: "3.10" }
           - { php: "7.2.34", os: "3.12" }
-          - { php: "7.3.28", os: "3.12" }   # Current = 7.3.29/3.14
-          - { php: "7.4.20", os: "3.12" }   # Current = 7.4.22/3.14
-          - { php: "8.0.7",  os: "3.12" }   # Current = 8.0.9/3.14
+          - { php: "7.3.29", os: "3.14" }
+          - { php: "7.4.22", os: "3.14" }
+          - { php: "8.0.9",  os: "3.14" }
 
     steps:
       # Use metadata action to get `major.minor` PHP version
