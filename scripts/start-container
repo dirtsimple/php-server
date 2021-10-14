@@ -85,12 +85,14 @@ setup-users() {
     ensure-user developer "${DEVELOPER_UID-}" "${DEVELOPER_GID-}"
     NGINX_GROUPS=($(groups nginx))
     addgroup developer nginx
+    ensure-dir "$COMPOSER_HOME"
+    ensure-dir ~developer
     chown -Rf developer:developer "$COMPOSER_HOME" ~developer
 }
 
 grant() {
     for f in $4; do
-        ch$1 -Rf $2 "$f" && chmod -Rf $3 $f
+        ch$1 -Rf $2 "$f" && chmod -Rf $3 $f || true
     done
 }
 
@@ -115,6 +117,7 @@ run-user-scripts() {
     fi
     # run scripts in list-grouped, glob-sorted  order
     for i in $(glob-list "$RUN_SCRIPTS"); do
+        [[ -f "$i" ]] || continue
         reject-nginx-writable "$i"
         [[ -x "$i" ]] || { chmod ug+x "$i" && sync; } || return
         "$i"
