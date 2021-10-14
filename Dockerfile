@@ -21,6 +21,7 @@ RUN apk --no-cache add \
 # -------- Setup composer and runtime environment
 
 ADD https://getcomposer.org/download/2.1.5/composer.phar /usr/bin/composer
+ADD https://curl.se/ca/cacert.pem /etc/cacert.pem
 RUN chmod ugo+rx /usr/bin/composer && \
     chmod ugo+r /etc/supervisord.conf && \
 	mkdir -p /run/nginx /etc/nginx/sites-enabled && \
