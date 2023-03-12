@@ -311,7 +311,7 @@ Also note that although you *can* just specify a PHP version, major releases of 
 
 ### Major Versions
 
-* 3.x - Alpine 3.10-3.14, Composer 2, PHP 7.1 through 8.0, dropped prestissimo from default `GLOBAL_REQUIRE`, added `--optimize-autoloader` to default `COMPOSER_OPTIONS`
+* 3.x - Alpine 3.10-3.16, Composer 2, PHP 7.1 through 8.2, dropped prestissimo from default `GLOBAL_REQUIRE`, added `--optimize-autoloader` to default `COMPOSER_OPTIONS`
 * 2.x - Alpine 3.9, Composer 1, PHP 7.1 through 7.3, build extensions using [mlocati/docker-php-extension-installer](https://github.com/mlocati/docker-php-extension-installer)
 * 1.4.x - Alpine 3.9, Composer 1, PHP 7.1 and 7.2, image based on Docker php-fpm-alpine, scripted extension builds
 * 1.3.x and older - Alpine 3.6, PHP 7.1 only,  implemented as an overlay on the nginx-php-fpm image
@@ -320,7 +320,9 @@ Also note that although you *can* just specify a PHP version, major releases of 
 
 | Tags          | PHP    | nginx  | mod lua | alpine | Notes |
 | ------------- | ------ | ------ | ------- | ------ | ----- |
-| 8.0-3.0.x | 8.0.9 | 1.20.1 | 0.10.19 | 3.14     |Composer 2|
+| 8.2-3.0.x | 8.2.3  | 1.22.1 | 0.10.21 | 3.16     |Composer 2|
+| 8.1-3.0.x | 8.1.16 | 1.22.1 | 0.10.21 | 3.16     ||
+| 8.0-3.0.x | 8.0.19 | 1.20.1 | 0.10.19 | 3.14     ||
 | 7.4-3.0.x | 7.4.22 | 1.20.1 | 0.10.19 | 3.14     ||
 | 7.3-3.0.x | 7.3.29 | 1.20.1 | 0.10.19 | 3.14     ||
 | 7.2-3.0.x | 7.2.34 | 1.18.0 | 0.10.15 | 3.12    ||
