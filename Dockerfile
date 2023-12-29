@@ -1,11 +1,11 @@
 # -------- Copy stuff from base images
-ARG PHP_VER=8.0.7
-ARG OS_VER=3.12
+ARG PHP_VER=8.3.14
+ARG OS_VER=3.18
 FROM php:$PHP_VER-fpm-alpine$OS_VER
 
 # -------- Add packages and build/install tools
 
-COPY --from=mlocati/php-extension-installer:1.2.50 /usr/bin/install-php-extensions /usr/bin/
+COPY --from=mlocati/php-extension-installer:2.1.75 /usr/bin/install-php-extensions /usr/bin/
 ENV LD_PRELOAD /usr/lib/preloadable_libiconv.so php
 RUN apk --no-cache add \
 		--repository http://dl-3.alpinelinux.org/alpine/edge/community \
@@ -42,7 +42,7 @@ VOLUME /etc/letsencrypt
 EXPOSE 443 80
 CMD ["/usr/bin/start-container"]
 
-COPY --from=bashitup/alpine-tools:latest \
+COPY --from=ghcr.io/bashup/alpine-tools:latest \
      /bin/dockerize /bin/yaml2json /bin/modd /bin/jq /bin/webhook /usr/bin/
 COPY scripts/install-extras scripts/composer-global /usr/bin/
 
