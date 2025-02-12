@@ -1,4 +1,4 @@
-# dirtsimple/php-server
+# ghcr.io/dirtsimple/php-server
 
 ### Overview
 

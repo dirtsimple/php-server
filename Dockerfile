@@ -5,7 +5,7 @@ FROM php:$PHP_VER-fpm-alpine$OS_VER
 
 # -------- Add packages and build/install tools
 
-COPY --from=mlocati/php-extension-installer:2.1.75 /usr/bin/install-php-extensions /usr/bin/
+COPY --from=mlocati/php-extension-installer:2.7.23 /usr/bin/install-php-extensions /usr/bin/
 ENV LD_PRELOAD /usr/lib/preloadable_libiconv.so php
 RUN apk --no-cache add \
 		--repository http://dl-3.alpinelinux.org/alpine/edge/community \
@@ -20,7 +20,7 @@ RUN apk --no-cache add \
 
 # -------- Setup composer and runtime environment
 
-ADD https://getcomposer.org/download/2.1.5/composer.phar /usr/bin/composer
+COPY --from=composer/composer:2.2.25-bin /composer /usr/bin/composer
 ADD https://curl.se/ca/cacert.pem /etc/cacert.pem
 RUN chmod ugo+rx /usr/bin/composer && \
     chmod ugo+r /etc/supervisord.conf && \
